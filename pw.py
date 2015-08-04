@@ -18,6 +18,7 @@ class League(IntEnum):
     mays = 6
     ruth = 4
 
+
 class Level(IntEnum):
     all = 0
     ml = 5
@@ -25,10 +26,12 @@ class Level(IntEnum):
     aaa = 4
     lm = 3
 
+
 class StatType(IntEnum):
     hitting = 0
     pitching = 1
     fielding = 2
+
 
 class StatGroup(IntEnum):
     basic = 0
@@ -36,37 +39,42 @@ class StatGroup(IntEnum):
 
 
 def log(message):
-    print("[{}] {}".format(datetime.datetime.now(),message))
+    print("[{}] {}".format(datetime.datetime.now(), message))
+
 
 def rest():
-    sleeptime = randint(3,12)
+    sleeptime = randint(3, 12)
     log("Sleeping {}".format(sleeptime))
     sleep(sleeptime)
 
+
 def get_year_from_season(league_id, season):
-    if league_id<6:
-        return 2012+season
+    if league_id < 6:
+        return 2012 + season
     else:
-        return 2013+season
+        return 2013 + season
+
 
 def get_season_from_year(league_id, year):
-    if league_id<6:
-        return year-2012
+    if league_id < 6:
+        return year - 2012
     else:
-        return year-2013
+        return year - 2013
+
 
 def to_insert(table, con):
-    cur=con.cursor()
+    cur = con.cursor()
 
     cur.execute("SHOW columns FROM {}".format(table))
-    columns = [column[0] for column in cur.fetchall() if column[0]!='id']
+    columns = [column[0] for column in cur.fetchall() if column[0] != 'id']
 
+    insert_string = ", ".join(['%s'] * len(columns))
 
-    insert_string = ", ".join(['%s']*len(columns))
-
-    query_string = 'INSERT INTO {} ({}) VALUES ({});'.format(table,','.join(columns),insert_string).replace('\'\'','NULL')
+    query_string = 'INSERT INTO {} ({}) VALUES ({});'.format(table, ','.join(columns), insert_string).replace('\'\'',
+                                                                                                              'NULL')
 
     return query_string
+
 
 def convert(val):
     lookup = {'k': 1000, 'm': 1000000, 'b': 1000000000}
@@ -78,16 +86,17 @@ def convert(val):
         return lookup[unit] * number
     return int(val)
 
+
 def get_sign_now(league, pos, con):
     cur = con.cursor()
     cur.execute("DELETE from sign_nows WHERE league_id=%s", [league.value])
 
-    url = "http://www.pennantwars.com/freeAgents.php?l={}&pos={}".format(league,pos)
-    log("reading "+url)
-    html = urllib.request.urlopen(url).read().decode('utf-8',errors='ignore')
+    url = "http://www.pennantwars.com/freeAgents.php?l={}&pos={}".format(league, pos)
+    log("reading " + url)
+    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
     log("gathering data")
     soup = BeautifulSoup(html, "lxml")
-    table = soup.find("table","fulltable")
+    table = soup.find("table", "fulltable")
 
     p = re.compile(".*p=(\d+).*")
 
@@ -100,44 +109,44 @@ def get_sign_now(league, pos, con):
         m = p.match(str(row))
 
         if m:
-            player_id=m.group(1)
+            player_id = m.group(1)
 
             vals = row.find_all('td')
             spans = vals[-1].find_all('span')
             salary = spans[-1]
 
-            newrow=[player_id, str(convert(salary.string)), str(league)]
+            newrow = [player_id, str(convert(salary.string)), str(league)]
 
             rows.append(newrow)
 
     log("writing csv")
     with open('sign_now_file.csv', 'w') as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
-            writer.writerows(row for row in rows if row)
+        writer = csv.writer(f)
+        writer.writerow(headers)
+        writer.writerows(row for row in rows if row)
 
     log("writing to database")
     cur = con.cursor()
-    query_string = to_insert('sign_nows',con)
-    cur.executemany(query_string,rows)
+    query_string = to_insert('sign_nows', con)
+    cur.executemany(query_string, rows)
 
 
 def get_pw_players(league, year, h, con):
-    if h==1:
-        table='hitters'
+    if h == 1:
+        table = 'hitters'
     else:
         table = 'pitchers'
 
     cur = con.cursor()
     cur.execute("DELETE from {} WHERE league_id=%s and year=%s".format(table), [league.value, year])
 
-    url = "http://www.pennantwars.com/exportPlayers.php?l={}&h={}".format(league,h)
+    url = "http://www.pennantwars.com/exportPlayers.php?l={}&h={}".format(league, h)
 
-    log("reading "+url)
-    html = urllib.request.urlopen(url).read().decode('utf-8',errors='ignore')
+    log("reading " + url)
+    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
 
     log("replacing DL")
-    html = html.replace("<span style='font-weight:bold;color:rgb(180, 47, 47)'>DL</div>","DL")
+    html = html.replace("<span style='font-weight:bold;color:rgb(180, 47, 47)'>DL</div>", "DL")
 
     log("writing csv")
     with open("players-{}-{}-{}".format(league, year, h), "w") as text_file:
@@ -150,12 +159,12 @@ def get_pw_players(league, year, h, con):
     your_list = list(reader)
     log("massaging data")
 
-    newrows=[[league.value, str(year)]+[None if not x else x for x in row] for row in your_list[1:]]
+    newrows = [[league.value, str(year)] + [None if not x else x for x in row] for row in your_list[1:]]
 
-    query_string = to_insert(table,con)
+    query_string = to_insert(table, con)
 
     log("saving to database")
-    cur.executemany(query_string,newrows)
+    cur.executemany(query_string, newrows)
 
 
 def get_pw_stats(league, division, level, season, tab, xtype, con):
@@ -172,20 +181,20 @@ def get_pw_stats(league, division, level, season, tab, xtype, con):
         else:
             sqltable = 'adv_pitching_stats'
 
-
     cur = con.cursor()
     cur.execute("DELETE from {} WHERE league_id=%s and division=%s and level=%s and year=%s".format(sqltable),
-                [league.value, division, level.value, get_year_from_season(league,season)])
+                [league.value, division, level.value, get_year_from_season(league, season)])
 
-
-
-    url = "http://www.pennantwars.com/viewStats.php?l={}&d={}&level={}&sseason={}&tab={}&xtype={}".format(league, division, level, season, tab,xtype)
-    log("reading "+url)
-    html = urllib.request.urlopen(url).read().decode('utf-8',errors='ignore')
+    url = "http://www.pennantwars.com/viewStats.php?l={}&d={}&level={}&sseason={}&tab={}&xtype={}".format(league,
+                                                                                                          division,
+                                                                                                          level, season,
+                                                                                                          tab, xtype)
+    log("reading " + url)
+    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
 
     log("making soup")
     soup = BeautifulSoup(html, "lxml")
-    table = soup.find("table","fulltable")
+    table = soup.find("table", "fulltable")
 
     p = re.compile(".*p=(\d+).*t=(\d+).*")
 
@@ -197,27 +206,27 @@ def get_pw_stats(league, division, level, season, tab, xtype, con):
     for row in table.find_all('tr', id=False):
 
         m = p.match(str(row))
-        newrow=[]
+        newrow = []
         if m:
-            newrow+=[str(m.group(1)), str(m.group(2)), str(int(league)), str(int(division)), str(int(level))]
+            newrow += [str(m.group(1)), str(m.group(2)), str(int(league)), str(int(division)), str(int(level))]
 
             for val in row.find_all('td'):
-                if val.text=='---':
+                if val.text == '---':
                     val = newrow.append(str(get_year_from_season(league, season)))
                 else:
                     newrow.append(val.text)
 
             rows.append(newrow)
 
-    filename = 'stats-{}-{}-{}-{}-{}-{}.csv'.format(league,division,level,season,tab,xtype)
-    log("writing csv to "+filename)
+    filename = 'stats-{}-{}-{}-{}-{}-{}.csv'.format(league, division, level, season, tab, xtype)
+    log("writing csv to " + filename)
     with open(filename, 'w') as f:
-            writer = csv.writer(f)
-            writer.writerow(headers)
-            writer.writerows(row for row in rows if row)
+        writer = csv.writer(f)
+        writer.writerow(headers)
+        writer.writerows(row for row in rows if row)
 
     log("writing to database")
-    insert_sql = to_insert(sqltable,con)
+    insert_sql = to_insert(sqltable, con)
 
     cur = con.cursor()
     cur.executemany(insert_sql, rows)
@@ -225,12 +234,12 @@ def get_pw_stats(league, division, level, season, tab, xtype, con):
 
 def get_league_date(league):
     url = "http://www.pennantwars.com/league.php?l={}&d=1".format(league)
-    log("reading "+url)
-    html = urllib.request.urlopen(url).read().decode('utf-8',errors='ignore')
+    log("reading " + url)
+    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
 
     p = re.compile("<br>(.+?)<br><a href")
     m = p.search(html)
-    #log("making soup")
+    # log("making soup")
     #soup = BeautifulSoup(html, "lxml")
     #container = soup.find("div", id = "tabcontainer")
     #dates = soup.findAll("div", style ="margin-top:-40px;width:100%;font-weight:bold;text-align:center")
@@ -238,3 +247,34 @@ def get_league_date(league):
     date_object = datetime.datetime.strptime(m.group(1), '%B %d, %Y')
     return date_object.date()
 
+
+def get_team_activity(league):
+    for division in [1, 2, 3, 4]:
+        url = "http://www.pennantwars.com/league.php?l={}&d={}&tab=4".format(league, division)
+        log("reading " + url)
+        html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
+        soup = BeautifulSoup(html, "lxml")
+        table = soup.find("table", "fulltable")
+
+        p = re.compile("t=(\d+)")
+
+        for row in table.find_all('tr'):
+
+            m = p.search(str(row))
+
+            if m:
+                team_id = m.group(1)
+                tds = [item.text for item in row.find_all('td')]
+                last_seen = tds[5]
+                log("{} {}".format(team_id, last_seen))
+
+
+if __name__ == '__main__':
+    global con
+    con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
+    con.autocommit = True
+
+    cur = con.cursor()
+    cur.execute("SET @@session.sql_mode= ''")
+
+    get_team_activity(League.mays)
