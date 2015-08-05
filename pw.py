@@ -248,7 +248,10 @@ def get_league_date(league):
     return date_object.date()
 
 
-def get_team_activity(league):
+def get_team_activity(league,con):
+    cur = con.cursor()
+    cur.execute("DELETE from team_activity WHERE league_id=%s", [league.value])
+
     for division in [1, 2, 3, 4]:
         url = "http://www.pennantwars.com/league.php?l={}&d={}&tab=4".format(league, division)
         log("reading " + url)
@@ -258,6 +261,8 @@ def get_team_activity(league):
 
         p = re.compile("t=(\d+)")
 
+        activities = []
+
         for row in table.find_all('tr'):
 
             m = p.search(str(row))
@@ -266,15 +271,20 @@ def get_team_activity(league):
                 team_id = m.group(1)
                 tds = [item.text for item in row.find_all('td')]
                 last_seen = tds[5]
+                date_object = datetime.datetime.strptime(last_seen, '%m/%d/%y')
+                activities.append([league.value, team_id, date_object])
                 log("{} {}".format(team_id, last_seen))
+
+        query = "insert into team_activity (league_id, team_id, last_seen) VALUES (%s, %s, %s)"
+        cur.executemany(query, activities)
 
 
 if __name__ == '__main__':
-    global con
-    con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
+
+    con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
     con.autocommit = True
 
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
 
-    get_team_activity(League.mays)
+    get_team_activity(League.mays, con)

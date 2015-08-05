@@ -6,7 +6,7 @@ from pw import *
 if __name__ == '__main__':
 
     global con
-    con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
+    con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
     con.autocommit = True
 
     cur = con.cursor()

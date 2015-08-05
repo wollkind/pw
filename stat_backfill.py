@@ -4,7 +4,6 @@ from pw import *
 
 if __name__ == '__main__':
 
-    global con
     con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
     con.autocommit = True
 
