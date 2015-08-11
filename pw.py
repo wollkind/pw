@@ -89,7 +89,7 @@ def convert(val):
 
 def get_sign_now(league, pos, con):
     cur = con.cursor()
-    cur.execute("DELETE from sign_nows WHERE league_id=%s", [league.value])
+    cur.execute("DELETE from sign_nows WHERE pos=%s and league_id=%s", [pos,league.value])
 
     url = "http://www.pennantwars.com/freeAgents.php?l={}&pos={}".format(league, pos)
     log("reading " + url)
@@ -114,8 +114,11 @@ def get_sign_now(league, pos, con):
             vals = row.find_all('td')
             spans = vals[-1].find_all('span')
             salary = spans[-1]
+            dollars = salary.string
+            if dollars == 'Sign Now':
+                dollars = '$200m'
 
-            newrow = [player_id, str(convert(salary.string)), str(league)]
+            newrow = [player_id, str(convert(dollars)), str(league.value),pos]
 
             rows.append(newrow)
 
@@ -138,7 +141,12 @@ def get_pw_players(league, year, h, con):
         table = 'pitchers'
 
     cur = con.cursor()
+
+    cur.execute("DELETE from {}_prev WHERE league_id=%s and year=%s".format(table), [league.value, year])
+    cur.execute("INSERT into {}_prev SELECT * from {} where league_id=%s and year=%s".format(table, table), [league.value, year])
+
     cur.execute("DELETE from {} WHERE league_id=%s and year=%s".format(table), [league.value, year])
+
 
     url = "http://www.pennantwars.com/exportPlayers.php?l={}&h={}".format(league, h)
 
@@ -281,10 +289,11 @@ def get_team_activity(league,con):
 
 if __name__ == '__main__':
 
-    con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
+    #con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
+    con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
     con.autocommit = True
 
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
 
-    get_team_activity(League.mays, con)
+    get_sign_now(League.mays, 0, con)

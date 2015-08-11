@@ -4,6 +4,7 @@ from pw import *
 
 if __name__ == '__main__':
 
+    #con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
     con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
     con.autocommit = True
 
@@ -16,11 +17,11 @@ if __name__ == '__main__':
     cur.execute("truncate pitching_stats")
     cur.execute("truncate fielding_stats")
 
-    for league in list(League):
+    for league in [League.foxx]:
         log("Backfilling {}".format(league.name))
         for level in [Level.aaa, Level.ml, Level.lm]:
             log("Doing level {}".format(level))
-            for type in list(StatType):
+            for type in [StatType.hitting, StatType.pitching]:
                 log("Doing stattype {}".format(type))
                 if level != Level.ml:
                     if type == StatType.fielding:
