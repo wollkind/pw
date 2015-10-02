@@ -6,7 +6,6 @@ from pw import *
 if __name__ == '__main__':
 
 
-    #con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
     con = mysql.connector.connect(host='localhost', user='njord', password='r905pyc', database='pw', unix_socket='/var/run/mysqld/mysqld.sock')
     con.autocommit = True
 
