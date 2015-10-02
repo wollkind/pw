@@ -12,11 +12,14 @@ if __name__ == '__main__':
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
 
-    log("Get {} date".format(league))
-    cur_league_date = get_league_date(league)
-    log("{} date {}".format(league.name, cur_league_date))
+
 
     for league in list(League):
+
+        log("Get {} date".format(league))
+        cur_league_date = get_league_date(league)
+        log("{} date {}".format(league.name, cur_league_date))
+
         year = cur_league_date.year
         season = get_season_from_year(league, year)
 
