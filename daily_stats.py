@@ -16,6 +16,9 @@ if __name__ == '__main__':
         cur_league_date = get_league_date(league)
         log("{} date {}".format(league.name, cur_league_date))
 
+        year = cur_league_date.year
+        season = get_season_from_year(league, year)
+
         cur.execute("select max(entry_date) d from processed_dates where league_id=%s",[league.value])
         row = cur.fetchone()
         log("Last saw {}".format(row[0]))
