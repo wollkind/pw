@@ -17,16 +17,26 @@ if __name__ == '__main__':
     cur.execute("truncate pitching_stats")
     cur.execute("truncate fielding_stats")
 
-    for league in [League.foxx]:
+    for league in list(League):
+        current_year = get_league_date(league).year
+        start_year = get_league_start_year(league)
+
+        log("Get the fielding stats")
+        years=range(start_year, current_year+1)
+
+        for year in years:
+            for division in range(1,5):
+                season = get_season_from_year(league, year)
+                log("Backfilling league {} fielding year {} division {}".format(league, year, division))
+                get_pw_stats(league,division,Level.ml,season,StatType.fielding,StatGroup.basic, con)
+                rest()
+
         log("Backfilling {}".format(league.name))
         for level in [Level.aaa, Level.ml, Level.lm]:
             log("Doing level {}".format(level))
             for type in [StatType.hitting, StatType.pitching]:
                 log("Doing stattype {}".format(type))
                 if level != Level.ml:
-                    if type == StatType.fielding:
-                        log("Skipping")
-                        continue
                     divisions = range(0,1)
                 else:
                     divisions = range(1,5)
@@ -36,9 +46,10 @@ if __name__ == '__main__':
                     get_pw_stats(league,division,level,-1,type,StatGroup.basic, con)
 
                     rest()
-                    if type != StatType.fielding:
-                        log("Backfilling division {} level {} type {} advanced".format(division, level.name, type.name))
-                        get_pw_stats(league,division,level,-1,type,StatGroup.advanced, con)
-                        rest()
+
+                    log("Backfilling division {} level {} type {} advanced".format(division, level.name, type.name))
+                    get_pw_stats(league,division,level,-1,type,StatGroup.advanced, con)
+                    rest()
+
 
     con.close()

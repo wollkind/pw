@@ -38,6 +38,13 @@ class StatGroup(IntEnum):
     advanced = 1
 
 
+def get_league_start_year(league):
+    if league==League.ruth:
+        return 2013
+    else:
+        return 2014
+
+
 def log(message):
     print("[{}] {}".format(datetime.datetime.now(), message))
 
@@ -204,6 +211,10 @@ def get_pw_stats(league, division, level, season, tab, xtype, con):
     soup = BeautifulSoup(html, "lxml")
     table = soup.find("table", "fulltable")
 
+    ## check for missing data (during offseason)
+    if table is None:
+        return
+
     p = re.compile(".*p=(\d+).*t=(\d+).*")
 
     log("massaging data")
@@ -276,14 +287,16 @@ def get_team_activity(league,con):
             m = p.search(str(row))
 
             if m:
+                team_name = row.find('a').text
+
                 team_id = m.group(1)
                 tds = [item.text for item in row.find_all('td')]
                 last_seen = tds[5]
                 date_object = datetime.datetime.strptime(last_seen, '%m/%d/%y')
-                activities.append([league.value, team_id, date_object])
+                activities.append([league.value, team_id, date_object, team_name, division])
                 log("{} {}".format(team_id, last_seen))
 
-        query = "insert into team_activity (league_id, team_id, last_seen) VALUES (%s, %s, %s)"
+        query = "insert into team_activity (league_id, team_id, last_seen, team_name, division) VALUES (%s, %s, %s, %s, %s)"
         cur.executemany(query, activities)
 
 
@@ -296,4 +309,4 @@ if __name__ == '__main__':
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
 
-    get_sign_now(League.mays, 0, con)
+    get_league_date(League.mays)
