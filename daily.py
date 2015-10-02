@@ -7,13 +7,13 @@ if __name__ == '__main__':
 
 
     #con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
-    con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
+    con = mysql.connector.connect(host='localhost', user='njord', password='r905pyc', database='pw', unix_socket='/var/run/mysqld/mysqld.sock')
     con.autocommit = True
 
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
 
-    for league in [League.ruth]:
+    for league in list(League):
         log("Get {} date".format(league))
         cur_league_date = get_league_date(league)
         log("{} date {}".format(league.name, cur_league_date))
@@ -38,32 +38,31 @@ if __name__ == '__main__':
             rest()
             get_team_activity(league, con)
 
-            # for division in range(1,5):
-            #     season = get_season_from_year(league, year)
-            #     log("Getting fielding for division {}".format(division))
-            #     get_pw_stats(league, division, Level.ml, season, StatType.fielding, StatGroup.basic, con)
-            #     rest()
-            #
-            #
-            # for level in [Level.aaa, Level.ml, Level.lm]:
-            #     log("Doing level {}".format(level))
-            #     for type in [StatType.hitting, StatType.pitching]:
-            #         log("Doing stattype {}".format(type))
-            #         if level != Level.ml:
-            #             divisions = range(0,1)
-            #         else:
-            #             divisions = range(1,5)
-            #
-            #         for division in divisions:
-            #             log("Backfilling division {} level {} type {} basic".format(division, level.name, type.name))
-            #             get_pw_stats(league, division, level, season, type, StatGroup.basic, con)
-            #
-            #             rest()
-            #
-            #             log("Backfilling division {} level {} type {} advanced".format(division, level.name, type.name))
-            #             get_pw_stats(league, division, level, season, type, StatGroup.advanced, con)
-            #             rest()
-
+            for division in range(1,5):
+                 season = get_season_from_year(league, year)
+                 log("Getting fielding for division {}".format(division))
+                 get_pw_stats(league, division, Level.ml, season, StatType.fielding, StatGroup.basic, con)
+                 rest()
+            
+            
+            for level in [Level.aaa, Level.ml, Level.lm]:
+                 log("Doing level {}".format(level))
+                 for type in [StatType.hitting, StatType.pitching]:
+                     log("Doing stattype {}".format(type))
+                     if level != Level.ml:
+                         divisions = range(0,1)
+                     else:
+                         divisions = range(1,5)
+            
+                     for division in divisions:
+                         log("Backfilling division {} level {} type {} basic".format(division, level.name, type.name))
+                         get_pw_stats(league, division, level, season, type, StatGroup.basic, con)
+            
+                         rest()
+            
+                         log("Backfilling division {} level {} type {} advanced".format(division, level.name, type.name))
+                         get_pw_stats(league, division, level, season, type, StatGroup.advanced, con)
+                         rest()
 
 
             log("Note that we have processed this date")

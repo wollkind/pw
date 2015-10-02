@@ -14,7 +14,6 @@ from time import sleep
 
 
 class League(IntEnum):
-    foxx = 9
     mays = 6
     ruth = 4
 
