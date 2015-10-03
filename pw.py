@@ -14,7 +14,6 @@ from time import sleep
 
 
 class League(IntEnum):
-    foxx = 9
     mays = 6
     ruth = 4
 
@@ -129,11 +128,11 @@ def get_sign_now(league, pos, con):
 
             rows.append(newrow)
 
-    log("writing csv")
-    with open('sign_now_file.csv', 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(headers)
-        writer.writerows(row for row in rows if row)
+    # log("writing csv")
+    # with open('sign_now_file.csv', 'w') as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow(headers)
+    #     writer.writerows(row for row in rows if row)
 
     log("writing to database")
     cur = con.cursor()
@@ -163,9 +162,9 @@ def get_pw_players(league, year, h, con):
     log("replacing DL")
     html = html.replace("<span style='font-weight:bold;color:rgb(180, 47, 47)'>DL</div>", "DL")
 
-    log("writing csv")
-    with open("players-{}-{}-{}".format(league, year, h), "w") as text_file:
-        text_file.write(html)
+    # log("writing csv")
+    # with open("players-{}-{}-{}".format(league, year, h), "w") as text_file:
+    #     text_file.write(html)
 
     f = StringIO(html)
 
@@ -237,12 +236,12 @@ def get_pw_stats(league, division, level, season, tab, xtype, con):
 
             rows.append(newrow)
 
-    filename = 'stats-{}-{}-{}-{}-{}-{}.csv'.format(league, division, level, season, tab, xtype)
-    log("writing csv to " + filename)
-    with open(filename, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(headers)
-        writer.writerows(row for row in rows if row)
+    # filename = 'stats-{}-{}-{}-{}-{}-{}.csv'.format(league, division, level, season, tab, xtype)
+    # log("writing csv to " + filename)
+    # with open(filename, 'w') as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow(headers)
+    #     writer.writerows(row for row in rows if row)
 
     log("writing to database")
     insert_sql = to_insert(sqltable, con)
