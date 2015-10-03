@@ -11,7 +11,7 @@ msg = MIMEText('test email')
 # me == the sender's email address
 # you == the recipient's email address
 msg['Subject'] = 'The contents of'
-msg['From'] = 'test@stevewollkind.com'
+msg['From'] = 'test@li1281-193.members.linode.com'
 msg['To'] = 'wollkind@gmail.com'
 
 # Send the message via our own SMTP server.
