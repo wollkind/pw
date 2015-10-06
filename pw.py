@@ -16,6 +16,8 @@ from time import sleep
 class League(IntEnum):
     mays = 6
     ruth = 4
+    williams = 5
+
 
 
 class Level(IntEnum):

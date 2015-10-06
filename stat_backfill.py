@@ -8,16 +8,16 @@ if __name__ == '__main__':
 
     con.autocommit = True
 
-    log("Cleaning stat tables")
-    cur = con.cursor()
-    cur.execute("SET @@session.sql_mode= ''")
-    cur.execute("truncate adv_hitting_stats")
-    cur.execute("truncate adv_pitching_stats")
-    cur.execute("truncate hitting_stats")
-    cur.execute("truncate pitching_stats")
-    cur.execute("truncate fielding_stats")
+    # log("Cleaning stat tables")
+    # cur = con.cursor()
+    # cur.execute("SET @@session.sql_mode= ''")
+    # cur.execute("truncate adv_hitting_stats")
+    # cur.execute("truncate adv_pitching_stats")
+    # cur.execute("truncate hitting_stats")
+    # cur.execute("truncate pitching_stats")
+    # cur.execute("truncate fielding_stats")
 
-    for league in list(League):
+    for league in [League.williams]:
         current_year = get_league_date(league).year
         start_year = get_league_start_year(league)
 
