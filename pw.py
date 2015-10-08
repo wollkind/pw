@@ -17,9 +17,9 @@ class League(IntEnum):
     mays = 6
     ruth = 4
     williams = 5
-    foxx = 9
     aaron = 8
     cobb = 7
+    foxx = 9
 
 
 
@@ -296,6 +296,8 @@ def get_team_activity(league,con):
                 team_id = m.group(1)
                 tds = [item.text for item in row.find_all('td')]
                 last_seen = tds[5]
+                if last_seen == '':
+                    next
                 date_object = datetime.datetime.strptime(last_seen, '%m/%d/%y')
                 activities.append([league.value, team_id, date_object, team_name, division])
                 log("{} {}".format(team_id, last_seen))
