@@ -17,6 +17,9 @@ class League(IntEnum):
     mays = 6
     ruth = 4
     williams = 5
+    foxx = 9
+    aaron = 8
+    cobb = 7
 
 
 
