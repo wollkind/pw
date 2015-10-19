@@ -16,10 +16,6 @@ from time import sleep
 class League(IntEnum):
     mays = 6
     ruth = 4
-    williams = 5
-    aaron = 8
-    cobb = 7
-    foxx = 9
 
 
 
