@@ -18,6 +18,7 @@ class League(IntEnum):
     ruth = 4
 
 
+
 class Level(IntEnum):
     all = 0
     ml = 5
@@ -299,21 +300,24 @@ def get_team_activity(league,con):
                 team_id = m.group(1)
                 tds = [item.text for item in row.find_all('td')]
                 last_seen = tds[5]
+                conf = tds[0]
+                if last_seen == '':
+                    continue
                 date_object = datetime.datetime.strptime(last_seen, '%m/%d/%y')
-                activities.append([league.value, team_id, date_object, team_name, division])
+                activities.append([league.value, team_id, date_object, team_name, division, conf])
                 log("{} {}".format(team_id, last_seen))
 
-        query = "insert into team_activity (league_id, team_id, last_seen, team_name, division) VALUES (%s, %s, %s, %s, %s)"
+        query = "insert into team_activity (league_id, team_id, last_seen, team_name, division, conf) VALUES (%s, %s, %s, %s, %s, %s)"
         cur.executemany(query, activities)
 
 
 if __name__ == '__main__':
 
-    #con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
-    con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
+    con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
+    #con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
     con.autocommit = True
 
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
 
-    get_league_date(League.mays)
+    get_team_activity(League.foxx, con)

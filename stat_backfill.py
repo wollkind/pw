@@ -9,14 +9,14 @@ if __name__ == '__main__':
 
     con.autocommit = True
 
-    log("Cleaning stat tables")
-    cur = con.cursor()
-    cur.execute("SET @@session.sql_mode= ''")
-    cur.execute("truncate adv_hitting_stats")
-    cur.execute("truncate adv_pitching_stats")
-    cur.execute("truncate hitting_stats")
-    cur.execute("truncate pitching_stats")
-    cur.execute("truncate fielding_stats")
+    # log("Cleaning stat tables")
+    # cur = con.cursor()
+    # cur.execute("SET @@session.sql_mode= ''")
+    # cur.execute("truncate adv_hitting_stats")
+    # cur.execute("truncate adv_pitching_stats")
+    # cur.execute("truncate hitting_stats")
+    # cur.execute("truncate pitching_stats")
+    # cur.execute("truncate fielding_stats")
 
     teams = list(range(1,97))
     levels = [Level.ml, Level.aaa, Level.lm]
