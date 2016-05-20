@@ -49,7 +49,7 @@ def log(message):
 
 
 def rest():
-    sleeptime = randint(3, 12)
+    sleeptime = randint(7, 31)
     log("Sleeping {}".format(sleeptime))
     sleep(sleeptime)
 
@@ -73,7 +73,7 @@ def to_insert(table, con):
 
     cur.execute("SHOW columns FROM {}".format(table))
     columns = [column[0] for column in cur.fetchall() if column[0] != 'id']
-
+    log(len(columns))
     insert_string = ", ".join(['%s'] * len(columns))
 
     query_string = 'INSERT INTO {} ({}) VALUES ({});'.format(table, ','.join(columns), insert_string).replace('\'\'',
@@ -181,7 +181,7 @@ def get_pw_players(league, year, h, con):
     cur.executemany(query_string, newrows)
 
 
-def get_pw_stats(league, division, level, season, tab, xtype, con):
+def get_pw_stats(league, team, level, season, tab, xtype, con):
     if tab == StatType.fielding:
         sqltable = 'fielding_stats'
     elif tab == StatType.hitting:
@@ -196,14 +196,18 @@ def get_pw_stats(league, division, level, season, tab, xtype, con):
             sqltable = 'adv_pitching_stats'
 
     cur = con.cursor()
-    cur.execute("DELETE from {} WHERE league_id=%s and division=%s and level=%s and year=%s".format(sqltable),
-                [league.value, division, level.value, get_year_from_season(league, season)])
+    cur.execute("DELETE from {} WHERE league_id=%s and team_id=%s and level=%s and year=%s".format(sqltable),
+                [league.value, team, level.value, get_year_from_season(league, season)])
 
-    url = "http://www.pennantwars.com/viewStats.php?l={}&d={}&level={}&sseason={}&tab={}&xtype={}".format(league,
-                                                                                                          division,
+    url = "http://www.pennantwars.com/viewStats.php?l={}&t={}&level={}&sseason={}&tab={}".format(league,
+                                                                                                          team,
                                                                                                           level, season,
-                                                                                                          tab, xtype)
+                                                                                                          tab)
+    if xtype==StatGroup.advanced:
+        url += "&xtype=1"
+
     log("reading " + url)
+
     html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
 
     log("making soup")
@@ -226,7 +230,7 @@ def get_pw_stats(league, division, level, season, tab, xtype, con):
         m = p.match(str(row))
         newrow = []
         if m:
-            newrow += [str(m.group(1)), str(m.group(2)), str(int(league)), str(int(division)), str(int(level))]
+            newrow += [str(m.group(1)), str(team), str(int(league)), str(0), str(int(level))]
 
             for val in row.find_all('td'):
                 if val.text == '---':
@@ -245,7 +249,8 @@ def get_pw_stats(league, division, level, season, tab, xtype, con):
 
     log("writing to database")
     insert_sql = to_insert(sqltable, con)
-
+    log(insert_sql)
+    log(rows[0])
     cur = con.cursor()
     cur.executemany(insert_sql, rows)
 
@@ -284,6 +289,9 @@ def get_team_activity(league,con):
         for row in table.find_all('tr'):
 
             m = p.search(str(row))
+
+
+
 
             if m:
                 team_name = row.find('a').text

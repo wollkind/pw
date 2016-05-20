@@ -1,10 +1,11 @@
 __author__ = 'steve'
-
+import random
 from pw import *
 
 if __name__ == '__main__':
 
     con = mysql.connector.connect(host='localhost', user='njord', password='r905pyc', database='pw', unix_socket='/var/run/mysqld/mysqld.sock')
+    #con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
 
     con.autocommit = True
 
@@ -17,39 +18,39 @@ if __name__ == '__main__':
     cur.execute("truncate pitching_stats")
     cur.execute("truncate fielding_stats")
 
-    for league in list(League):
+    teams = list(range(1,97))
+    levels = [Level.ml, Level.aaa, Level.lm]
+    types = [StatType.hitting, StatType.pitching]
+
+    for league in [League.mays]:
         current_year = get_league_date(league).year
         start_year = get_league_start_year(league)
 
         log("Get the fielding stats")
-        years=range(start_year, current_year+1)
-
+        years = list(range(current_year, start_year - 1, -1))
+        random.shuffle(years)
         for year in years:
-            for division in range(1,5):
-                season = get_season_from_year(league, year)
-                log("Backfilling league {} fielding year {} division {}".format(league, year, division))
-                get_pw_stats(league,division,Level.ml,season,StatType.fielding,StatGroup.basic, con)
+            season = get_season_from_year(league, year)
+            log("Backfilling {} {}".format(league.name, year))
+
+
+            random.shuffle(teams)
+            for team_id in teams:
+                log("Doing team {}".format(team_id))
+                random.shuffle(levels)
+                for level in levels:
+                    log("Doing level {}".format(level))
+                    random.shuffle(types)
+                    for type in types:
+                        log("Doing stattype {}".format(type))
+
+                        log("Backfilling team {} level {} type {} basic".format(team_id, level.name, type.name))
+                        get_pw_stats(league, team_id, level, season, type, StatGroup.basic, con)
+                        rest()
+                        get_pw_stats(league, team_id, level, season, type, StatGroup.advanced, con)
+
+                        rest()
+                get_pw_stats(league, team_id, Level.ml, season, StatType.fielding, StatGroup.basic, con)
                 rest()
 
-        log("Backfilling {}".format(league.name))
-        for level in [Level.aaa, Level.ml, Level.lm]:
-            log("Doing level {}".format(level))
-            for type in [StatType.hitting, StatType.pitching]:
-                log("Doing stattype {}".format(type))
-                if level != Level.ml:
-                    divisions = range(0,1)
-                else:
-                    divisions = range(1,5)
-
-                for division in divisions:
-                    log("Backfilling division {} level {} type {} basic".format(division, level.name, type.name))
-                    get_pw_stats(league,division,level,-1,type,StatGroup.basic, con)
-
-                    rest()
-
-                    log("Backfilling division {} level {} type {} advanced".format(division, level.name, type.name))
-                    get_pw_stats(league,division,level,-1,type,StatGroup.advanced, con)
-                    rest()
-
-
-    con.close()
+con.close()
