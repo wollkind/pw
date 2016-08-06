@@ -4,8 +4,8 @@ from pw import *
 
 if __name__ == '__main__':
 
-    con = mysql.connector.connect(host='localhost', user='njord', password='r905pyc', database='pw', unix_socket='/var/run/mysqld/mysqld.sock')
-    #con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
+    #con = mysql.connector.connect(host='localhost', user='njord', password='r905pyc', database='pw', unix_socket='/var/run/mysqld/mysqld.sock')
+    con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
 
     con.autocommit = True
 
@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
             random.shuffle(teams)
             for team_id in teams:
-                get_team_schedule(league, team, season, con)
+                get_team_schedule(league, team_id, season, con)
                 rest()
 
 con.close()

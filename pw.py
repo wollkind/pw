@@ -74,7 +74,7 @@ def to_insert(table, con):
 
     cur.execute("SHOW columns FROM {}".format(table))
     columns = [column[0] for column in cur.fetchall() if column[0] != 'id']
-    log(len(columns))
+
     insert_string = ", ".join(['%s'] * len(columns))
 
     query_string = 'INSERT INTO {} ({}) VALUES ({});'.format(table, ','.join(columns), insert_string).replace('\'\'',
@@ -211,7 +211,7 @@ def get_team_schedule(league, team, season, con):
 
             date = cells[0].text.split("/")
             strdate=str(year)+"-"+date[0]+"-"+date[1]
-            log(strdate)
+
 
             result = cells[2].text
             resultex = re.compile("([WL]), (\d+) - (\d+)")
