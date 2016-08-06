@@ -182,6 +182,77 @@ def get_pw_players(league, year, h, con):
     cur.executemany(query_string, newrows)
 
 
+def get_team_schedule(league, team, season, con):
+    ## delete this set of rows from games table
+    year = get_year_from_season(league, season)
+
+    cur = con.cursor()
+    cur.execute("DELETE from schedule_and_results WHERE league_id=%s and team_id=%s and year=%s",
+                [league.value, team, year])
+
+
+    url = "http://www.pennantwars.com/team.php?l={}&t={}&tab=2&xseason={}".format(league.value, team,season)
+    log(url)
+    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
+
+    log("making soup")
+    soup = BeautifulSoup(html, "lxml")
+    tables = soup.find_all("table", id=False, class_="fulltable")
+    log("done")
+
+    result_rows=[]
+
+    for table in tables:
+        rows = table.find_all("tr", id=False)
+        for row in rows:
+            cells = row.find_all("td")
+            if len(cells)<2:
+                continue
+
+            date = cells[0].text.split("/")
+            strdate=str(year)+"-"+date[0]+"-"+date[1]
+            log(strdate)
+
+            result = cells[2].text
+            resultex = re.compile("([WL]), (\d+) - (\d+)")
+
+
+
+            tex = re.compile(".*t=(\d+).*")
+            gex = re.compile(".*g=(\d+).*")
+            m=tex.match(str(row))
+
+            if m:
+                opponent = m.group(1)
+                game = None
+                g = gex.match(str(row))
+                if g:
+                    game = g.group(1)
+
+                resm = resultex.match(result)
+                result_char=None
+                rs=None
+                ra=None
+                if resm:
+                    result_char=resm.group(1)
+                    rs=resm.group(2)
+                    ra=resm.group(3)
+
+                newrow = [league.value, team, year, str(strdate), str(game), str(opponent), str(result_char), rs, ra]
+                result_rows.append(newrow)
+
+
+
+
+    log("writing to database")
+    insert_sql = to_insert("schedule_and_results", con)
+
+    cur = con.cursor()
+    cur.executemany(insert_sql, result_rows)
+
+
+
+
 def get_pw_stats(league, team, level, season, tab, xtype, con):
     if tab == StatType.fielding:
         sqltable = 'fielding_stats'
@@ -250,8 +321,8 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
 
     log("writing to database")
     insert_sql = to_insert(sqltable, con)
-    log(insert_sql)
-    log(rows[0])
+    #log(insert_sql)
+    #log(rows[0])
     cur = con.cursor()
     cur.executemany(insert_sql, rows)
 
@@ -313,11 +384,11 @@ def get_team_activity(league,con):
 
 if __name__ == '__main__':
 
-    con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
-    #con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
+    #con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
+    con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
     con.autocommit = True
 
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
 
-    get_team_activity(League.foxx, con)
+    get_team_schedule(6,19,24, con)
