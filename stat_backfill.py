@@ -32,7 +32,6 @@ if __name__ == '__main__':
 
         log("Starting league {} ({} of {})".format(league, league_count, len(leagues)))
         years = list(range(current_year, start_year - 1, -1))
-        random.shuffle(years)
 
         year_count = 0
         for year in years:
