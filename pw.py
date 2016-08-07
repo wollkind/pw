@@ -194,7 +194,7 @@ def get_team_schedule(league, team, season, con):
                 [league.value, team, year])
 
     numrows = int(cur.fetchone()[0])
-    if numrows > 0
+    if numrows > 0:
         log("No work to do")
         return
 
@@ -403,3 +403,4 @@ if __name__ == '__main__':
     cur.execute("SET @@session.sql_mode= ''")
 
     get_pw_stats(League.mays, 20, Level.ml, 23, StatType.hitting, StatGroup.basic, con)
+    get_team_schedule(League.mays, 19, 22, con)
