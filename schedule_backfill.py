@@ -37,7 +37,8 @@ if __name__ == '__main__':
                 total_count+=1
                 log("Getting team {} of {} ({} of {} total)".format(team_count, len(teams), total_count,
                                                                     len(teams)*len(years)*len(leagues)))
-                get_team_schedule(league, team_id, season, con)
-                rest()
+                did_work=get_team_schedule(league, team_id, season, con)
+                if did_work:
+                    rest()
 
 con.close()

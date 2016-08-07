@@ -206,7 +206,7 @@ def get_team_schedule(league, team, season, con):
     numrows = int(cur.fetchone()[0])
     if numrows > 0:
         log("No work to do")
-        return
+        return False
 
     url = "http://www.pennantwars.com/team.php?l={}&t={}&tab=2&xseason={}".format(league.value, team,season)
     log("...reading "+url)
@@ -266,7 +266,7 @@ def get_team_schedule(league, team, season, con):
 
     cur = con.cursor()
     cur.executemany(insert_sql, result_rows)
-
+    return True
 
 
 
@@ -297,7 +297,7 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
 
     if int(numrows) > 0:
         log("No work to do")
-        return
+        return False
 
 
     url = "http://www.pennantwars.com/viewStats.php?l={}&t={}&level={}&sseason={}&tab={}".format(league,
@@ -346,6 +346,7 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
 
     cur = con.cursor()
     cur.executemany(insert_sql, rows)
+    return True
 
 
 def get_league_date(league):

@@ -50,17 +50,20 @@ if __name__ == '__main__':
                 level_count = 0
 
                 for level in levels:
+                    level_count+=1
                     log("Starting {} {} {} {} ({} of {})".format(league.name, year, team_id, level, level_count, len(levels)))
                     random.shuffle(types)
                     for type in types:
                         total_count+=1
                         log("Working on {} of {}".format(total_count, len(leagues)*len(years)*len(teams)*len(levels)*len(types)))
-                        get_pw_stats(league, team_id, level, season, type, StatGroup.basic, con)
-                        rest()
-                        get_pw_stats(league, team_id, level, season, type, StatGroup.advanced, con)
-
-                        rest()
-                get_pw_stats(league, team_id, Level.ml, season, StatType.fielding, StatGroup.basic, con)
-                rest()
+                        did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.basic, con)
+                        if did_work:
+                            rest()
+                        did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.advanced, con)
+                        if did_work:
+                            rest()
+                did_work = get_pw_stats(league, team_id, Level.ml, season, StatType.fielding, StatGroup.basic, con)
+                if did_work:
+                    rest()
 
 con.close()
