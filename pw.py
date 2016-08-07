@@ -255,7 +255,7 @@ def get_team_schedule(league, team, season, con):
                     rs=resm.group(2)
                     ra=resm.group(3)
 
-                newrow = [league.value, team, year, str(strdate), str(game), str(opponent), str(result_char), rs, ra]
+                newrow = [league.value, team, year, str(strdate), game, str(opponent), result_char, rs, ra]
                 result_rows.append(newrow)
 
 
