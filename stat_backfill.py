@@ -19,7 +19,7 @@ if __name__ == '__main__':
     teams = list(range(1,97))
     levels = [Level.ml, Level.aaa, Level.lm]
     types = [StatType.hitting, StatType.pitching]
-    leagues = [League.mays]
+    leagues = [League.mays, League.ruth]
 
     total_count = 0
     league_count = 0
@@ -28,7 +28,8 @@ if __name__ == '__main__':
         league_count+=1
 
         current_year = get_league_date(league).year
-        start_year = get_league_start_year(league)
+        #start_year = get_league_start_year(league)
+        start_year = current_year-4 ## just get last 5 years for now
 
         log("Starting league {} ({} of {})".format(league, league_count, len(leagues)))
         years = list(range(current_year, start_year - 1, -1))
