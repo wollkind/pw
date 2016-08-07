@@ -99,7 +99,7 @@ def get_sign_now(league, pos, con):
     cur.execute("DELETE from sign_nows WHERE pos=%s and league_id=%s", [pos,league.value])
 
     url = "http://www.pennantwars.com/freeAgents.php?l={}&pos={}".format(league, pos)
-    log("reading " + url)
+    log("...reading " + url)
     html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
     log("gathering data")
     soup = BeautifulSoup(html, "lxml")
@@ -135,7 +135,7 @@ def get_sign_now(league, pos, con):
     #     writer.writerow(headers)
     #     writer.writerows(row for row in rows if row)
 
-    log("writing to database")
+    log("...writing to database")
     cur = con.cursor()
     query_string = to_insert('sign_nows', con)
     cur.executemany(query_string, rows)
@@ -157,7 +157,7 @@ def get_pw_players(league, year, h, con):
 
     url = "http://www.pennantwars.com/exportPlayers.php?l={}&h={}".format(league, h)
 
-    log("reading " + url)
+    log("...reading " + url)
     html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
 
     log("replacing DL")
@@ -172,7 +172,7 @@ def get_pw_players(league, year, h, con):
     log("converting to csv")
     reader = csv.reader(f)
     your_list = list(reader)
-    log("massaging data")
+    log("...massaging data")
 
     newrows = [[league.value, str(year)] + [None if not x else x for x in row] for row in your_list[1:]]
 
@@ -187,15 +187,22 @@ def get_team_schedule(league, team, season, con):
     year = get_year_from_season(league, season)
 
     cur = con.cursor()
-    cur.execute("DELETE from schedule_and_results WHERE league_id=%s and team_id=%s and year=%s",
+    # cur.execute("DELETE from schedule_and_results WHERE league_id=%s and team_id=%s and year=%s",
+    #             [league.value, team, year])
+
+    cur.execute("SELECT count(*) c from schedule_and_results WHERE league_id=%s and team_id=%s and year=%s",
                 [league.value, team, year])
 
+    numrows = int(cur.fetchone()[0])
+    if numrows > 0
+        log("No work to do")
+        return
 
     url = "http://www.pennantwars.com/team.php?l={}&t={}&tab=2&xseason={}".format(league.value, team,season)
-    log(url)
+    log("...reading "+url)
     html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
 
-    log("making soup")
+    log("...making soup")
     soup = BeautifulSoup(html, "lxml")
     tables = soup.find_all("table", id=False, class_="fulltable")
     log("done")
@@ -244,7 +251,7 @@ def get_team_schedule(league, team, season, con):
 
 
 
-    log("writing to database")
+    log("...writing to database")
     insert_sql = to_insert("schedule_and_results", con)
 
     cur = con.cursor()
@@ -254,6 +261,7 @@ def get_team_schedule(league, team, season, con):
 
 
 def get_pw_stats(league, team, level, season, tab, xtype, con):
+    log("Getting {} {} {} {} {} {}".format(league, team, level, season, tab, xtype))
     if tab == StatType.fielding:
         sqltable = 'fielding_stats'
     elif tab == StatType.hitting:
@@ -268,8 +276,19 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
             sqltable = 'adv_pitching_stats'
 
     cur = con.cursor()
-    cur.execute("DELETE from {} WHERE league_id=%s and team_id=%s and level=%s and year=%s".format(sqltable),
+    # cur.execute("DELETE from {} WHERE league_id=%s and team_id=%s and level=%s and year=%s".format(sqltable),
+    #             [league.value, team, level.value, get_year_from_season(league, season)])
+
+    cur.execute("SELECT count(*) numrows from {} WHERE league_id=%s and team_id=%s and level=%s and year=%s".format(sqltable),
                 [league.value, team, level.value, get_year_from_season(league, season)])
+
+    numrows = int(cur.fetchone()[0])
+
+
+    if int(numrows) > 0:
+        log("No work to do")
+        return
+
 
     url = "http://www.pennantwars.com/viewStats.php?l={}&t={}&level={}&sseason={}&tab={}".format(league,
                                                                                                           team,
@@ -278,11 +297,11 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
     if xtype==StatGroup.advanced:
         url += "&xtype=1"
 
-    log("reading " + url)
+    log("...reading " + url)
 
     html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
 
-    log("making soup")
+    log("...making soup")
     soup = BeautifulSoup(html, "lxml")
     table = soup.find("table", "fulltable")
 
@@ -292,7 +311,7 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
 
     p = re.compile(".*p=(\d+).*t=(\d+).*")
 
-    log("massaging data")
+    log("...massaging data")
     headers = [header.text for header in table.find_all('th')]
 
     rows = []
@@ -312,29 +331,21 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
 
             rows.append(newrow)
 
-    # filename = 'stats-{}-{}-{}-{}-{}-{}.csv'.format(league, division, level, season, tab, xtype)
-    # log("writing csv to " + filename)
-    # with open(filename, 'w') as f:
-    #     writer = csv.writer(f)
-    #     writer.writerow(headers)
-    #     writer.writerows(row for row in rows if row)
-
-    log("writing to database")
+    log("...writing to database")
     insert_sql = to_insert(sqltable, con)
-    #log(insert_sql)
-    #log(rows[0])
+
     cur = con.cursor()
     cur.executemany(insert_sql, rows)
 
 
 def get_league_date(league):
     url = "http://www.pennantwars.com/league.php?l={}&d=1".format(league)
-    log("reading " + url)
+    log("...reading " + url)
     html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
 
     p = re.compile("<br>(.+?)<br><a href")
     m = p.search(html)
-    # log("making soup")
+    # log("...making soup")
     #soup = BeautifulSoup(html, "lxml")
     #container = soup.find("div", id = "tabcontainer")
     #dates = soup.findAll("div", style ="margin-top:-40px;width:100%;font-weight:bold;text-align:center")
@@ -349,7 +360,7 @@ def get_team_activity(league,con):
 
     for division in [1, 2, 3, 4]:
         url = "http://www.pennantwars.com/league.php?l={}&d={}&tab=4".format(league, division)
-        log("reading " + url)
+        log("...reading " + url)
         html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
         soup = BeautifulSoup(html, "lxml")
         table = soup.find("table", "fulltable")
@@ -391,4 +402,4 @@ if __name__ == '__main__':
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
 
-    get_team_schedule(6,19,24, con)
+    get_pw_stats(League.mays, 20, Level.ml, 23, StatType.hitting, StatGroup.basic, con)
