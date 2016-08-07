@@ -6,7 +6,7 @@ import mysql.connector
 import csv
 import re
 from io import StringIO
-import time
+import socket
 import datetime
 from enum import IntEnum
 from random import randint
@@ -43,6 +43,16 @@ def get_league_start_year(league):
         return 2013
     else:
         return 2014
+
+
+def get_con():
+
+    host = socket.gethostname()
+    if host=="stevens-mbp.home":
+        return mysql.connector.connect(host='localhost', user='root', password='', database='pw')
+    else:
+        return mysql.connector.connect(host='localhost', user='njord', password='r905pyc', database='pw', unix_socket='/var/run/mysqld/mysqld.sock')
+
 
 
 def log(message):
