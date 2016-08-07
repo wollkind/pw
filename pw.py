@@ -317,7 +317,7 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
 
     ## check for missing data (during offseason)
     if table is None:
-        return
+        return True
 
     p = re.compile(".*p=(\d+).*t=(\d+).*")
 
