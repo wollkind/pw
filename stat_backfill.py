@@ -32,39 +32,15 @@ if __name__ == '__main__':
         start_year = current_year-4 ## just get last 5 years for now
 
         log("Starting league {} ({} of {})".format(league, league_count, len(leagues)))
-        years = list(range(current_year, start_year - 1, -1))
+        years = list(range(current_year - 1, start_year - 1, -1))
 
         year_count = 0
         for year in years:
             year_count+=1
-            season = get_season_from_year(league, year)
             log("Starting {} {} ({} of {})".format(league.name, year, year_count, len(years)))
 
+            get_all_stats_for_league_year(league, year, teams, levels, types, con)
+            season = get_season_from_year(league, year)
 
-            random.shuffle(teams)
-            team_count = 0
-            for team_id in teams:
-                team_count+=1
-                log("Starting {} {} {} ({} of {})".format(league.name, year, team_id, team_count, len(teams)))
-                random.shuffle(levels)
-
-                level_count = 0
-
-                for level in levels:
-                    level_count+=1
-                    log("Starting {} {} {} {} ({} of {})".format(league.name, year, team_id, level, level_count, len(levels)))
-                    random.shuffle(types)
-                    for type in types:
-                        total_count+=1
-                        log("Working on {} of {}".format(total_count, len(leagues)*len(years)*len(teams)*len(levels)*len(types)))
-                        did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.basic, con)
-                        if did_work:
-                            rest()
-                        did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.advanced, con)
-                        if did_work:
-                            rest()
-                did_work = get_pw_stats(league, team_id, Level.ml, season, StatType.fielding, StatGroup.basic, con)
-                if did_work:
-                    rest()
 
 con.close()

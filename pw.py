@@ -5,11 +5,11 @@ import urllib
 import mysql.connector
 import csv
 import re
+import random
 from io import StringIO
 import socket
 import datetime
 from enum import IntEnum
-from random import randint
 from time import sleep
 
 
@@ -89,7 +89,6 @@ def to_insert(table, con):
 
     query_string = 'INSERT INTO {} ({}) VALUES ({});'.format(table, ','.join(columns), insert_string).replace('\'\'',
                                                                                                               'NULL')
-
     return query_string
 
 
@@ -192,6 +191,22 @@ def get_pw_players(league, year, h, con):
     cur.executemany(query_string, newrows)
 
 
+def get_team_news(league, team, season, con):
+    year = get_year_from_season(league, season)
+
+    url = "http://www.pennantwars.com/team.php?l={}&t={}&tab=3&xseason={}".format(league.value, team,season)
+    log("...reading "+url)
+    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
+
+    log("...making soup")
+    soup = BeautifulSoup(html, "lxml")
+    transactions = soup.find("table", class_="fulltable noStretch").find_all("tr")
+
+    for trans in transactions:
+        log(trans.text)
+
+    log("done")
+
 def get_team_schedule(league, team, season, con):
     ## delete this set of rows from games table
     year = get_year_from_season(league, season)
@@ -270,7 +285,7 @@ def get_team_schedule(league, team, season, con):
 
 
 
-def get_pw_stats(league, team, level, season, tab, xtype, con):
+def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
     log("Getting {} {} {} {} {} {}".format(league, team, level, season, tab, xtype))
     if tab == StatType.fielding:
         sqltable = 'fielding_stats'
@@ -294,10 +309,12 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
 
     numrows = int(cur.fetchone()[0])
 
-
-    if int(numrows) > 0:
+    if int(numrows) > 0 and reload is False:
         log("No work to do")
         return False
+    else:
+        cur.execute("DELETE from {} WHERE league_id=%s and team_id=%s and level=%s and year=%s".format(sqltable),
+                [league.value, team, level.value, get_year_from_season(league, season)])
 
 
     url = "http://www.pennantwars.com/viewStats.php?l={}&t={}&level={}&sseason={}&tab={}".format(league,
@@ -317,12 +334,13 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
 
     ## check for missing data (during offseason)
     if table is None:
+        log("...no stats")
         return True
 
     p = re.compile(".*p=(\d+).*t=(\d+).*")
 
     log("...massaging data")
-    headers = [header.text for header in table.find_all('th')]
+
 
     rows = []
 
@@ -343,7 +361,8 @@ def get_pw_stats(league, team, level, season, tab, xtype, con):
 
     log("...writing to database")
     insert_sql = to_insert(sqltable, con)
-
+    #log(insert_sql)
+    #log(rows[0])
     cur = con.cursor()
     cur.executemany(insert_sql, rows)
     return True
@@ -404,6 +423,34 @@ def get_team_activity(league,con):
         cur.executemany(query, activities)
 
 
+def get_all_stats_for_league_year(league, year, teams, levels, types, con, reload=False):
+    season = get_season_from_year(league, year)
+    #random.shuffle(teams)
+    team_count = 0
+    for team_id in teams:
+        team_count+=1
+        log("Starting {} {} {} ({} of {})".format(league.name, year, team_id, team_count, len(teams)))
+        #random.shuffle(levels)
+
+        level_count = 0
+
+        for level in levels:
+            level_count+=1
+            log("Starting {} {} {} {} ({} of {})".format(league.name, year, team_id, level, level_count, len(levels)))
+            #random.shuffle(types)
+            for type in types:
+                did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.basic, con, reload)
+                if did_work:
+                    rest()
+                did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.advanced, con, reload)
+                if did_work:
+                    rest()
+        did_work = get_pw_stats(league, team_id, Level.ml, season, StatType.fielding, StatGroup.basic, con, reload)
+        if did_work:
+            rest()
+
+
+
 if __name__ == '__main__':
 
     #con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
@@ -413,5 +460,5 @@ if __name__ == '__main__':
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
 
-    get_pw_stats(League.mays, 20, Level.ml, 23, StatType.hitting, StatGroup.basic, con)
-    get_team_schedule(League.mays, 19, 22, con)
+    #get_pw_stats(League.mays, 20, Level.ml, 23, StatType.hitting, StatGroup.basic, con)
+    get_team_news(League.mays, 19, 22, con)
