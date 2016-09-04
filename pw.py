@@ -425,19 +425,19 @@ def get_team_activity(league,con):
 
 def get_all_stats_for_league_year(league, year, teams, levels, types, con, reload=False):
     season = get_season_from_year(league, year)
-    #random.shuffle(teams)
+    random.shuffle(teams)
     team_count = 0
     for team_id in teams:
         team_count+=1
         log("Starting {} {} {} ({} of {})".format(league.name, year, team_id, team_count, len(teams)))
-        #random.shuffle(levels)
+        random.shuffle(levels)
 
         level_count = 0
 
         for level in levels:
             level_count+=1
             log("Starting {} {} {} {} ({} of {})".format(league.name, year, team_id, level, level_count, len(levels)))
-            #random.shuffle(types)
+            random.shuffle(types)
             for type in types:
                 did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.basic, con, reload)
                 if did_work:
