@@ -17,7 +17,7 @@ if __name__ == '__main__':
     # cur.execute("truncate fielding_stats")
 
     teams = list(range(1,97))
-    levels = [Level.ml, Level.aaa, Level.lm]
+    levels = [Level.ml] #, Level.aaa, Level.lm]
     types = [StatType.hitting, StatType.pitching]
     leagues = [League.mays, League.ruth]
 
@@ -28,19 +28,18 @@ if __name__ == '__main__':
         league_count+=1
 
         current_year = get_league_date(league).year
-        #start_year = get_league_start_year(league)
-        start_year = current_year-4 ## just get last 5 years for now
+        start_year = get_league_start_year(league)
+        #start_year = current_year ## just get last 5 years for now
 
         log("Starting league {} ({} of {})".format(league, league_count, len(leagues)))
         years = list(range(current_year - 1, start_year - 1, -1))
 
         year_count = 0
-        for year in years:
+        for year in random.shuffle(years):
             year_count+=1
             log("Starting {} {} ({} of {})".format(league.name, year, year_count, len(years)))
 
             get_all_stats_for_league_year(league, year, teams, levels, types, con)
-            season = get_season_from_year(league, year)
 
 
 con.close()
