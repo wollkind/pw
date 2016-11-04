@@ -60,7 +60,7 @@ def log(message):
 
 
 def rest():
-    sleeptime = randint(2,5)
+    sleeptime = random.randint(2,5)
     log("Sleeping {}".format(sleeptime))
     sleep(sleeptime)
 
