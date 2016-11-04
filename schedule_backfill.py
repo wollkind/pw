@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
 
     teams = list(range(1,97))
-    leagues = [League.mays, League.ruth]
+    leagues = [League.mays]
 
     league_count=0
     total_count=0
