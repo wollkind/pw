@@ -49,7 +49,7 @@ def get_con():
 
     host = socket.gethostname()
     if host=="stevens-mbp.home":
-        return mysql.connector.connect(host='localhost', user='root', password='', database='pw')
+        return mysql.connector.connect(host='li1281-193.members.linode.com', user='njord', password='r905pyc', database='pw')
     else:
         return mysql.connector.connect(host='localhost', user='njord', password='r905pyc', database='pw', unix_socket='/var/run/mysqld/mysqld.sock')
 
@@ -60,7 +60,7 @@ def log(message):
 
 
 def rest():
-    sleeptime = 1
+    sleeptime = randint(2,5)
     log("Sleeping {}".format(sleeptime))
     sleep(sleeptime)
 
@@ -215,11 +215,11 @@ def get_team_schedule(league, team, season, con):
     # cur.execute("DELETE from schedule_and_results WHERE league_id=%s and team_id=%s and year=%s",
     #             [league.value, team, year])
 
-    cur.execute("SELECT count(*) c from schedule_and_results WHERE league_id=%s and team_id=%s and year=%s",
+    cur.execute("SELECT count(*) c from schedule_and_results WHERE league_id=%s and team_id=%s and year=%s and result is not null",
                 [league.value, team, year])
 
     numrows = int(cur.fetchone()[0])
-    if numrows > 0:
+    if numrows >= 162:
         log("No work to do")
         return False
 
@@ -453,9 +453,7 @@ def get_all_stats_for_league_year(league, year, teams, levels, types, con, reloa
 
 if __name__ == '__main__':
 
-    #con = mysql.connector.connect(host='devbox-me', user='oleepoth', password='urcify', database='pw', port='3316')
-    con = mysql.connector.connect(host='localhost', user='root', password='', database='pw')
-    con.autocommit = True
+    con = get_con()
 
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
