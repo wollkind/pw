@@ -223,6 +223,9 @@ def get_team_schedule(league, team, season, con):
         log("No work to do")
         return False
 
+    cur.execute("DELETE from schedule_and_results WHERE league_id=%s and team_id=%s and year=%s",
+                [league.value, team, get_year_from_season(league, season)])
+
     url = "http://www.pennantwars.com/team.php?l={}&t={}&tab=2&xseason={}".format(league.value, team,season)
     log("...reading "+url)
     html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
