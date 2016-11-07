@@ -247,6 +247,12 @@ def get_team_schedule(league, team, season, con):
             date = cells[0].text.split("/")
             strdate=str(year)+"-"+date[0]+"-"+date[1]
 
+            game_link = cells[1].text
+            if "@" in game_link:
+
+                home=False
+            else:
+                home = True
 
             result = cells[2].text
             resultex = re.compile("([WL]), (\d+) - (\d+)")
@@ -270,8 +276,15 @@ def get_team_schedule(league, team, season, con):
                 ra=None
                 if resm:
                     result_char=resm.group(1)
-                    rs=resm.group(2)
-                    ra=resm.group(3)
+                    awayruns=resm.group(2)
+                    homeruns=resm.group(3)
+
+                    if home:
+                        rs=homeruns
+                        ra=awayruns
+                    else:
+                        rs=awayruns
+                        ra=homeruns
 
                 newrow = [league.value, team, year, str(strdate), game, str(opponent), result_char, rs, ra]
                 result_rows.append(newrow)

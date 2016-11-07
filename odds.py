@@ -7,7 +7,7 @@ from collections import defaultdict
 
 def postseason_odds(league_id, division, year, con):
 
-    num_sims = 10000
+    num_sims = 100000
 
     aggregate_results = {}
     aggregate_results = defaultdict(lambda: {'wins':0,'losses':0,'maxwins':0,'maxlosses':0,'conf':0,'unconf':0,'wc':0,'unwc':0}, aggregate_results)
@@ -90,7 +90,7 @@ def postseason_odds(league_id, division, year, con):
         avgwins = aggregate_results[team]['wins']/num_sims
         avglosses = aggregate_results[team]['losses']/num_sims
 
-        log("{} {} {} {} {}".format(names[team], avgwins, avglosses, aggregate_results[team]['unwc']+aggregate_results[team]['unconf'], aggregate_results[team]['wc']+aggregate_results[team]['conf']))
+        log("{} wins: {} losses: {} releg: {} playoffs: {} conf: {} wc: {}".format(names[team], avgwins, avglosses, aggregate_results[team]['unwc']+aggregate_results[team]['unconf'], aggregate_results[team]['wc']+aggregate_results[team]['conf'],aggregate_results[team]['conf'],aggregate_results[team]['wc'] ))
 
     return aggregate_results
 
@@ -153,7 +153,7 @@ def get_pA(wpct1, wpct2):
 
 def get_team_records(league_id, division, year, con):
     cur = con.cursor()
-    cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end), sum(case when result='L' then 1 else 0 end) from schedule_and_results s, team_activity a where a.team_id=s.team_id and
+    cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/100, sum(case when result='L' then 1 else 0 end)+(sum(rs)-sum(ra))/100/count(*) from schedule_and_results s, team_activity a where a.team_id=s.team_id and
     a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s group by s.team_id""",[division, year, league_id])
 
     result = cur.fetchall()
