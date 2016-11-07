@@ -51,7 +51,7 @@ def get_con():
     if host=="stevens-mbp.home":
         return mysql.connector.connect(host='li1281-193.members.linode.com', user='njord', password='r905pyc', database='pw')
     else:
-        return mysql.connector.connect(host='localhost', user='njord', password='r905pyc', database='pw', unix_socket='/var/run/mysqld/mysqld.sock')
+        return mysql.connector.connect(host='li1281-193.members.linode.com', user='njord', password='r905pyc', database='pw')
 
 
 
