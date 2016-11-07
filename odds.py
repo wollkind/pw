@@ -156,7 +156,7 @@ def get_pA(wpct1, wpct2):
 def get_team_records(league_id, division, year, con):
     cur = con.cursor()
     cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/100, sum(case when result='L' then 1 else 0 end) from schedule_and_results s, team_activity a where a.team_id=s.team_id and
-    a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s group by s.team_id""",[division, year, league_id])
+    a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s and game_date<%s group by s.team_id""",[division, year, league_id, start_date])
 
     result = cur.fetchall()
 
