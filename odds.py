@@ -3,11 +3,11 @@ __author__ = 'steve'
 from pw import *
 import copy
 import operator
+import sys
 from collections import defaultdict
 
-def postseason_odds(league_id, division, year, con):
+def postseason_odds(num_sims, league_id, division, year, con):
 
-    num_sims = 100000
 
     aggregate_results = {}
     aggregate_results = defaultdict(lambda: {'wins':0,'losses':0,'maxwins':0,'maxlosses':0,'conf':0,'unconf':0,'wc':0,'unwc':0}, aggregate_results)
@@ -87,11 +87,12 @@ def postseason_odds(league_id, division, year, con):
 
     names = get_team_name_dictionary(league_id, division, con)
 
-    for team in aggregate_results:
-        avgwins = aggregate_results[team]['wins']/num_sims
-        avglosses = aggregate_results[team]['losses']/num_sims
+    sorted_teams = sorted(names.items(), key=operator.itemgetter(1))
 
-        log("{} wins: {} losses: {} releg: {} playoffs: {} conf: {} wc: {}".format(names[team], avgwins, avglosses, aggregate_results[team]['unwc']+aggregate_results[team]['unconf'], aggregate_results[team]['wc']+aggregate_results[team]['conf'],aggregate_results[team]['conf'],aggregate_results[team]['wc'] ))
+    for team in sorted_teams:
+        res = aggregate_results[team[0]]
+
+        log("{} releg: {} playoffs: {} conf: {} wc: {}".format(team[1], (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
 
     return aggregate_results
 
@@ -194,8 +195,10 @@ def get_remaining_schedule(league_id, division, year, con):
 if __name__ == '__main__':
 
     con=get_con()
+    division = int(sys.argv[1])
+    num_sims = int(sys.argv[2])
+    current_year = get_league_date(6).year
 
-
-    res = postseason_odds(6,1,2039,con)
+    res = postseason_odds(num_sims, 6, division, current_year, con)
 
 
