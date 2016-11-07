@@ -197,5 +197,5 @@ if __name__ == '__main__':
 
 
     res = postseason_odds(6,1,2039,con)
-    log(res)
+
 
