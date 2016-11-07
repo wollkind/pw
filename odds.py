@@ -24,7 +24,8 @@ def postseason_odds(league_id, division, year, con):
     conf4 = get_conf_teams(league_id, division, 4, con)
 
     for sim in range(1,num_sims):
-        log("Sim number {}".format(sim))
+        if sim % 1000 == 0:
+            log("Sim number {}".format(sim))
         records_copy = copy.deepcopy(team_records)
 
         for game in remaining_schedule:
@@ -153,7 +154,7 @@ def get_pA(wpct1, wpct2):
 
 def get_team_records(league_id, division, year, con):
     cur = con.cursor()
-    cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/100, sum(case when result='L' then 1 else 0 end)+(sum(rs)-sum(ra))/100/count(*) from schedule_and_results s, team_activity a where a.team_id=s.team_id and
+    cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/100, sum(case when result='L' then 1 else 0 end) from schedule_and_results s, team_activity a where a.team_id=s.team_id and
     a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s group by s.team_id""",[division, year, league_id])
 
     result = cur.fetchall()
