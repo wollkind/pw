@@ -23,7 +23,7 @@ def postseason_odds(league_id, division, year, con):
     conf3 = get_conf_teams(league_id, division, 3, con)
     conf4 = get_conf_teams(league_id, division, 4, con)
 
-    for sim in range(1,num_sims):
+    for sim in range(1,num_sims+1):
         if sim % 1000 == 0:
             log("Sim number {}".format(sim))
         records_copy = copy.deepcopy(team_records)
