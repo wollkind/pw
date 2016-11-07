@@ -6,7 +6,7 @@ import operator
 import sys
 from collections import defaultdict
 
-def postseason_odds(num_sims, league_id, division, year, con):
+def postseason_odds(start_date, num_sims, league_id, division, year, con):
 
 
     aggregate_results = {}
@@ -171,7 +171,7 @@ def get_team_wpcts(league_id, division, year, con):
 
     cur = con.cursor()
     cur.execute("""select s.team_id, sum(RS), sum(RA) from schedule_and_results s, team_activity a where a.team_id=s.team_id and
-    a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s group by s.team_id""",[division, year, league_id])
+    a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s and game_date<%s group by s.team_id""",[division, year, league_id,start_date])
 
     result = cur.fetchall()
 
@@ -187,7 +187,7 @@ def get_remaining_schedule(league_id, division, year, con):
 
     cur = con.cursor()
     cur.execute("""select s.team_id, s.opponent_id from schedule_and_results s, team_activity a where a.team_id=s.team_id and
-    a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s and s.team_id<opponent_id and result is null""",[division, year, league_id])
+    a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s and s.team_id<opponent_id and game_date>=%s""",[division, year, league_id, start_date])
 
     result = cur.fetchall()
     return result
@@ -197,8 +197,9 @@ if __name__ == '__main__':
     con=get_con()
     division = int(sys.argv[1])
     num_sims = int(sys.argv[2])
+    start_date = sys.argv[3]
     current_year = get_league_date(6).year
 
-    res = postseason_odds(num_sims, 6, division, current_year, con)
+    res = postseason_odds(start_date, num_sims, 6, division, current_year, con)
 
 
