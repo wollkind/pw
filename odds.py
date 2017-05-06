@@ -18,13 +18,13 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
     remaining_schedule = get_remaining_schedule(league_id, division, year, con)
 
 
-    conf1 = get_conf_teams(league_id, division, 1, con)
-    conf2 = get_conf_teams(league_id, division, 2, con)
-    conf3 = get_conf_teams(league_id, division, 3, con)
-    conf4 = get_conf_teams(league_id, division, 4, con)
+    conf1 = get_conf_teams(league_id, division, 1, year, con)
+    conf2 = get_conf_teams(league_id, division, 2, year, con)
+    conf3 = get_conf_teams(league_id, division, 3, year, con)
+    conf4 = get_conf_teams(league_id, division, 4, year, con)
 
     for sim in range(1,num_sims+1):
-        if sim % 1000 == 0:
+        if sim % 10 == 0:
             log("Sim number {}".format(sim))
         records_copy = copy.deepcopy(team_records)
 
@@ -85,7 +85,7 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
         aggregate_results[c34res['conf_losers'][1]]['unconf']+=1
 
 
-    names = get_team_name_dictionary(league_id, division, con)
+    names = get_team_name_dictionary(league_id, division, year, con)
 
     sorted_teams = sorted(names.items(), key=operator.itemgetter(1))
 
@@ -93,12 +93,14 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
         res = aggregate_results[team[0]]
 
         log("{} releg: {} playoffs: {} conf: {} wc: {}".format(team[1], (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
-
+        log(res)
     return aggregate_results
 
-def get_team_name_dictionary(league_id, division, con):
+
+def get_team_name_dictionary(league_id, division, year, con):
     cur = con.cursor()
-    cur.execute("""select team_id, team_name from team_activity where division=%s and league_id=%s""",[division, league_id])
+    cur.execute("""select a.team_id, a.team_name from team_activity a, team_histories h where a.team_id=h.team_id and a.league_id=
+    h.league_id and h.division=%s and h.year=%s and h.league_id=%s""",[division, year, league_id])
 
     ret={}
     result=cur.fetchall()
@@ -107,9 +109,9 @@ def get_team_name_dictionary(league_id, division, con):
 
     return ret
 
-def get_conf_teams(league_id, division, conf_id, con):
+def get_conf_teams(league_id, division, conf_id, year, con):
     cur = con.cursor()
-    cur.execute("""select team_id from team_activity where division=%s and league_id=%s and conf=%s""",[division, league_id, conf_id])
+    cur.execute("""select team_id from team_histories where year=%s and division=%s and league_id=%s and conference=%s""",[year, division, league_id, conf_id])
 
     output = []
 
@@ -119,9 +121,11 @@ def get_conf_teams(league_id, division, conf_id, con):
 
     return output
 
+
 def get_playoff_outcome(records, conf1, conf2, conf3, conf4):
 
     get_conf_outcomes(records, conf)
+
 
 def get_conf_outcomes(records, teams):
     conf_records={team: records[team] for team in teams}
@@ -131,6 +135,7 @@ def get_conf_outcomes(records, teams):
     loser = sorted_teams[5]
 
     return [winner[0], loser[0]]
+
 
 def get_half_outcome(records, teams1, teams2):
     c1result = get_conf_outcomes(records, teams1)
@@ -149,14 +154,17 @@ def get_half_outcome(records, teams1, teams2):
 
     return {'conf_winners': [c1result[0], c2result[0]], 'conf_losers': [c1result[1], c2result[1]], 'wc': wc, 'unwc': unwc}
 
+
 def get_pA(wpct1, wpct2):
     p1 = (wpct1 - wpct1 * wpct2)/(wpct1+wpct2-2*wpct1*wpct2)
     return p1
 
+
 def get_team_records(league_id, division, year, con):
     cur = con.cursor()
-    cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/100, sum(case when result='L' then 1 else 0 end) from schedule_and_results s, team_activity a where a.team_id=s.team_id and
-    a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s and game_date<%s group by s.team_id""",[division, year, league_id, start_date])
+    cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/100, sum(case when result='L' then 1 else 0 end) from schedule_and_results s, team_histories h
+    where h.team_id=s.team_id and
+    h.division=%s and s.year=%s and h.year=s.year and h.league_id=s.league_id and h.league_id=%s and game_date between '%s-04-01' and %s group by s.team_id""",[division, year, league_id, year, start_date])
 
     result = cur.fetchall()
 
@@ -167,11 +175,12 @@ def get_team_records(league_id, division, year, con):
 
     return team_records
 
+
 def get_team_wpcts(league_id, division, year, con):
 
     cur = con.cursor()
-    cur.execute("""select s.team_id, sum(RS), sum(RA) from schedule_and_results s, team_activity a where a.team_id=s.team_id and
-    a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s and game_date<%s group by s.team_id""",[division, year, league_id,start_date])
+    cur.execute("""select s.team_id, sum(RS), sum(RA) from schedule_and_results s, team_histories h where h.team_id=s.team_id and
+    h.division=%s and s.year=%s and h.league_id=s.league_id and h.league_id=%s and game_date<%s group by s.team_id""",[division, year, league_id,start_date])
 
     result = cur.fetchall()
 
@@ -183,14 +192,17 @@ def get_team_wpcts(league_id, division, year, con):
 
     return team_wptcs
 
+
 def get_remaining_schedule(league_id, division, year, con):
 
     cur = con.cursor()
-    cur.execute("""select s.team_id, s.opponent_id from schedule_and_results s, team_activity a where a.team_id=s.team_id and
-    a.division=%s and s.year=%s and a.league_id=s.league_id and a.league_id=%s and s.team_id<opponent_id and game_date>=%s""",[division, year, league_id, start_date])
+    cur.execute("""select s.team_id, s.opponent_id from schedule_and_results s, team_histories h where h.team_id=s.team_id and
+    h.division=%s and h.year=s.year and s.year=%s and h.league_id=s.league_id and
+    h.league_id=%s and s.team_id<opponent_id and game_date between %s and '%s-09-26' """,[division, year, league_id, start_date,year])
 
     result = cur.fetchall()
     return result
+
 
 if __name__ == '__main__':
 
@@ -198,7 +210,7 @@ if __name__ == '__main__':
     division = int(sys.argv[1])
     num_sims = int(sys.argv[2])
     start_date = sys.argv[3]
-    current_year = get_league_date(6).year
+    current_year = int(sys.argv[4])
 
     res = postseason_odds(start_date, num_sims, 6, division, current_year, con)
 

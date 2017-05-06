@@ -17,9 +17,9 @@ if __name__ == '__main__':
     # cur.execute("truncate fielding_stats")
 
     teams = list(range(1,97))
-    levels = [Level.ml] #, Level.aaa, Level.lm]
+    levels = [Level.ml, Level.aaa, Level.lm]
     types = [StatType.hitting, StatType.pitching]
-    leagues = [League.mays, League.ruth]
+    leagues = [League.mays]
 
     total_count = 0
     league_count = 0
@@ -28,7 +28,7 @@ if __name__ == '__main__':
         league_count+=1
 
         current_year = get_league_date(league).year
-        start_year = get_league_start_year(league)
+        start_year = 2041
         #start_year = current_year ## just get last 5 years for now
 
         log("Starting league {} ({} of {})".format(league, league_count, len(leagues)))

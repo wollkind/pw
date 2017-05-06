@@ -1,10 +1,11 @@
 __author__ = 'steve'
 
 from bs4 import BeautifulSoup
-import urllib
+import urllib.request
 import mysql.connector
 import csv
 import re
+import ssl
 import random
 from io import StringIO
 import socket
@@ -102,16 +103,54 @@ def convert(val):
         return lookup[unit] * number
     return int(val)
 
+def get_html(url):
+    log("...reading " + url)
+    gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)  # Only for gangsters
+    html = urllib.request.urlopen(url, context=gcontext).read().decode('utf-8', errors='ignore')
+    return html
+
+def get_soup(url):
+    html = get_html(url)
+    log("...making soup")
+    soup = BeautifulSoup(html, "lxml")
+    return soup
+
+
+def batch_insert(table, rows, con):
+    log("...writing to database")
+    cur = con.cursor()
+    query_string = to_insert(table, con)
+    cur.executemany(query_string, rows)
+    con.commit()
+
+
+def get_team_history(league, team_id, con):
+    cur = con.cursor()
+    cur.execute("DELETE from team_histories where team_id=%s and league_id=%s", [team_id, league.value])
+
+    url = "http://www.pennantwars.com/team.php?l={}&t={}&tab=4&x=1".format(league, team_id)
+    soup = get_soup(url)
+    table = soup.find_all("table", "fulltable")[3]
+    log(table)
+    rows=[]
+
+    for row in table.find_all('tr', attrs={'id': None}):
+        vals = row.find_all('td')
+        res = [x.text for x in vals]
+        res.append(team_id)
+        res.append(league.value)
+        rows.append(res)
+
+
+    batch_insert('team_histories', rows, con)
+
 
 def get_sign_now(league, pos, con):
     cur = con.cursor()
     cur.execute("DELETE from sign_nows WHERE pos=%s and league_id=%s", [pos,league.value])
 
     url = "http://www.pennantwars.com/freeAgents.php?l={}&pos={}".format(league, pos)
-    log("...reading " + url)
-    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
-    log("gathering data")
-    soup = BeautifulSoup(html, "lxml")
+    soup = get_soup(url)
     table = soup.find("table", "fulltable")
 
     p = re.compile(".*p=(\d+).*")
@@ -144,10 +183,7 @@ def get_sign_now(league, pos, con):
     #     writer.writerow(headers)
     #     writer.writerows(row for row in rows if row)
 
-    log("...writing to database")
-    cur = con.cursor()
-    query_string = to_insert('sign_nows', con)
-    cur.executemany(query_string, rows)
+    batch_insert('sign_nows',rows,con)
 
 
 def get_pw_players(league, year, h, con):
@@ -166,8 +202,7 @@ def get_pw_players(league, year, h, con):
 
     url = "http://www.pennantwars.com/exportPlayers.php?l={}&h={}".format(league, h)
 
-    log("...reading " + url)
-    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
+    html = get_html(url)
 
     log("replacing DL")
     html = html.replace("<span style='font-weight:bold;color:rgb(180, 47, 47)'>DL</div>", "DL")
@@ -185,27 +220,21 @@ def get_pw_players(league, year, h, con):
 
     newrows = [[league.value, str(year)] + [None if not x else x for x in row] for row in your_list[1:]]
 
-    query_string = to_insert(table, con)
-
-    log("saving to database")
-    cur.executemany(query_string, newrows)
+    batch_insert(table,newrows,con)
 
 
 def get_team_news(league, team, season, con):
     year = get_year_from_season(league, season)
 
     url = "http://www.pennantwars.com/team.php?l={}&t={}&tab=3&xseason={}".format(league.value, team,season)
-    log("...reading "+url)
-    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
-
-    log("...making soup")
-    soup = BeautifulSoup(html, "lxml")
+    get_soup(url)
     transactions = soup.find("table", class_="fulltable noStretch").find_all("tr")
 
     for trans in transactions:
         log(trans.text)
 
     log("done")
+
 
 def get_team_schedule(league, team, season, con):
     ## delete this set of rows from games table
@@ -290,15 +319,8 @@ def get_team_schedule(league, team, season, con):
                 result_rows.append(newrow)
 
 
-
-
-    log("...writing to database")
-    insert_sql = to_insert("schedule_and_results", con)
-
-    cur = con.cursor()
-    cur.executemany(insert_sql, result_rows)
+    batch_insert('schedule_and_results', result_rows, con)
     return True
-
 
 
 def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
@@ -340,12 +362,7 @@ def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
     if xtype==StatGroup.advanced:
         url += "&xtype=1"
 
-    log("...reading " + url)
-
-    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
-
-    log("...making soup")
-    soup = BeautifulSoup(html, "lxml")
+    soup = get_soup(url)
     table = soup.find("table", "fulltable")
 
     ## check for missing data (during offseason)
@@ -375,19 +392,13 @@ def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
 
             rows.append(newrow)
 
-    log("...writing to database")
-    insert_sql = to_insert(sqltable, con)
-    #log(insert_sql)
-    #log(rows[0])
-    cur = con.cursor()
-    cur.executemany(insert_sql, rows)
+    batch_insert(sqltable, rows, con)
     return True
 
 
 def get_league_date(league):
     url = "http://www.pennantwars.com/league.php?l={}&d=1".format(league)
-    log("...reading " + url)
-    html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
+    html = get_html(url)
 
     p = re.compile("<br>(.+?)<br><a href")
     m = p.search(html)
@@ -406,9 +417,7 @@ def get_team_activity(league,con):
 
     for division in [1, 2, 3, 4]:
         url = "http://www.pennantwars.com/league.php?l={}&d={}&tab=4".format(league, division)
-        log("...reading " + url)
-        html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
-        soup = BeautifulSoup(html, "lxml")
+        soup = get_soup(url)
         table = soup.find("table", "fulltable")
 
         p = re.compile("t=(\d+)")
@@ -418,9 +427,6 @@ def get_team_activity(league,con):
         for row in table.find_all('tr'):
 
             m = p.search(str(row))
-
-
-
 
             if m:
                 team_name = row.find('a').text
@@ -432,11 +438,11 @@ def get_team_activity(league,con):
                 if last_seen == '':
                     continue
                 date_object = datetime.datetime.strptime(last_seen, '%m/%d/%y')
-                activities.append([league.value, team_id, date_object, team_name, division, conf])
+                activities.append([team_id, league.value, date_object, team_name, division, conf])
                 log("{} {}".format(team_id, last_seen))
 
-        query = "insert into team_activity (league_id, team_id, last_seen, team_name, division, conf) VALUES (%s, %s, %s, %s, %s, %s)"
-        cur.executemany(query, activities)
+        batch_insert('team_activity', activities, con)
+
 
 
 def get_all_stats_for_league_year(league, year, teams, levels, types, con, reload=False):
@@ -475,4 +481,6 @@ if __name__ == '__main__':
     cur.execute("SET @@session.sql_mode= ''")
 
     #get_pw_stats(League.mays, 20, Level.ml, 23, StatType.hitting, StatGroup.basic, con)
-    get_team_news(League.mays, 19, 22, con)
+    #get_team_news(League.mays, 19, 22, con)
+    #get_team_history(League.mays, 20, con)
+    get_team_activity(League.mays, con)
