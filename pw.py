@@ -7,6 +7,7 @@ import csv
 import re
 import ssl
 import random
+import itertools
 from io import StringIO
 import socket
 import datetime
@@ -16,7 +17,8 @@ from time import sleep
 
 class League(IntEnum):
     mays = 6
-    ruth = 4
+    williams = 5
+
 
 
 
@@ -40,7 +42,7 @@ class StatGroup(IntEnum):
 
 
 def get_league_start_year(league):
-    if league==League.ruth:
+    if league==League.williams:
         return 2013
     else:
         return 2014
@@ -52,7 +54,7 @@ def get_con():
     if host=="stevens-mbp.home":
         return mysql.connector.connect(host='li1281-193.members.linode.com', user='njord', password='r905pyc', database='pw')
     else:
-        return mysql.connector.connect(host='li1281-193.members.linode.com', user='njord', password='r905pyc', database='pw')
+        return mysql.connector.connect(host='steve-pw.cvyzuxuyy5fs.us-east-2.rds.amazonaws.com', user='root', password='timA&Mpw9', database='pw')
 
 
 
@@ -136,7 +138,8 @@ def get_team_history(league, team_id, con):
 
     for row in table.find_all('tr', attrs={'id': None}):
         vals = row.find_all('td')
-        res = [x.text for x in vals]
+        res = [x.text.split(" - ") for x in vals]
+        res = list(itertools.chain.from_iterable(res))
         res.append(team_id)
         res.append(league.value)
         rows.append(res)
@@ -207,9 +210,9 @@ def get_pw_players(league, year, h, con):
     log("replacing DL")
     html = html.replace("<span style='font-weight:bold;color:rgb(180, 47, 47)'>DL</div>", "DL")
 
-    # log("writing csv")
-    # with open("players-{}-{}-{}".format(league, year, h), "w") as text_file:
-    #     text_file.write(html)
+    log("writing csv")
+    with open("players-{}-{}-{}".format(league, year, h), "w") as text_file:
+         text_file.write(html)
 
     f = StringIO(html)
 
@@ -318,7 +321,7 @@ def get_team_schedule(league, team, season, con):
                 newrow = [league.value, team, year, str(strdate), game, str(opponent), result_char, rs, ra]
                 result_rows.append(newrow)
 
-
+    log(result_rows[2])
     batch_insert('schedule_and_results', result_rows, con)
     return True
 
@@ -327,16 +330,21 @@ def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
     log("Getting {} {} {} {} {} {}".format(league, team, level, season, tab, xtype))
     if tab == StatType.fielding:
         sqltable = 'fielding_stats'
+        skip_columns = []
     elif tab == StatType.hitting:
         if xtype == StatGroup.basic:
             sqltable = 'hitting_stats'
+            skip_columns = [2,3,4]
         else:
             sqltable = 'adv_hitting_stats'
+            skip_columns = [2,3,4]
     elif tab == StatType.pitching:
         if xtype == StatGroup.basic:
             sqltable = 'pitching_stats'
+            skip_columns = [2,3,4]
         else:
             sqltable = 'adv_pitching_stats'
+            skip_columns = [2,3,4]
 
     cur = con.cursor()
     # cur.execute("DELETE from {} WHERE league_id=%s and team_id=%s and level=%s and year=%s".format(sqltable),
@@ -382,15 +390,20 @@ def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
         m = p.match(str(row))
         newrow = []
         if m:
-            newrow += [str(m.group(1)), str(team), str(int(league)), str(0), str(int(level))]
-
+            newrow += [str(m.group(1)), str(team), str(int(league)), str(int(level))]
+            column_no = 0
             for val in row.find_all('td'):
-                if val.text == '---':
-                    val = newrow.append(str(get_year_from_season(league, season)))
+                column_no += 1
+                if column_no in skip_columns:
+                    next
+                elif val.text == '---':
+                    newrow.append(str(get_year_from_season(league, season)))
                 else:
                     newrow.append(val.text)
+            if newrow[4] != "Average":
+                rows.append(newrow)
+                #log(newrow)
 
-            rows.append(newrow)
 
     batch_insert(sqltable, rows, con)
     return True
@@ -439,7 +452,7 @@ def get_team_activity(league,con):
                     continue
                 date_object = datetime.datetime.strptime(last_seen, '%m/%d/%y')
                 activities.append([team_id, league.value, date_object, team_name, division, conf])
-                log("{} {}".format(team_id, last_seen))
+
 
         batch_insert('team_activity', activities, con)
 
@@ -467,9 +480,9 @@ def get_all_stats_for_league_year(league, year, teams, levels, types, con, reloa
                 did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.advanced, con, reload)
                 if did_work:
                     rest()
-        did_work = get_pw_stats(league, team_id, Level.ml, season, StatType.fielding, StatGroup.basic, con, reload)
-        if did_work:
-            rest()
+        #did_work = get_pw_stats(league, team_id, Level.ml, season, StatType.fielding, StatGroup.basic, con, reload)
+        # if did_work:
+        #     rest()
 
 
 
@@ -479,8 +492,8 @@ if __name__ == '__main__':
 
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
-
+    get_sign_now(League.mays, 0, con)
     #get_pw_stats(League.mays, 20, Level.ml, 23, StatType.hitting, StatGroup.basic, con)
     #get_team_news(League.mays, 19, 22, con)
     #get_team_history(League.mays, 20, con)
-    get_team_activity(League.mays, con)
+    #get_team_activity(League.mays, con)
