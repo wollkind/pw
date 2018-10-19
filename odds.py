@@ -24,8 +24,8 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
     conf4 = get_conf_teams(league_id, division, 4, year, con)
 
     for sim in range(1,num_sims+1):
-        if sim % 10 == 0:
-            log("Sim number {}".format(sim))
+        # if sim % 10 == 0:
+        #     log("Sim number {}".format(sim))
         records_copy = copy.deepcopy(team_records)
 
         for game in remaining_schedule:
@@ -89,11 +89,16 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
 
     sorted_teams = sorted(names.items(), key=operator.itemgetter(1))
 
+    # for team in sorted_teams:
+    #     res = aggregate_results[team[0]]
+    #
+    #     log("{} releg: {} playoffs: {} conf: {} wc: {}".format(team[1], (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
+    #     log(res)
     for team in sorted_teams:
         res = aggregate_results[team[0]]
 
-        log("{} releg: {} playoffs: {} conf: {} wc: {}".format(team[1], (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
-        log(res)
+        print("{}, {}, {}, {}, {}".format(team[1], (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
+
     return aggregate_results
 
 
@@ -207,11 +212,13 @@ def get_remaining_schedule(league_id, division, year, con):
 if __name__ == '__main__':
 
     con=get_con()
-    division = int(sys.argv[1])
-    num_sims = int(sys.argv[2])
-    start_date = sys.argv[3]
-    current_year = int(sys.argv[4])
+    divisions = list(range(1,5))
+    num_sims = int(sys.argv[1])
+    start_date = sys.argv[2]
+    current_year = int(sys.argv[3])
+    league = int(sys.argv[4])
 
-    res = postseason_odds(start_date, num_sims, 6, division, current_year, con)
+    for division in divisions:
+        postseason_odds(start_date, num_sims, league, division, current_year, con)
 
 
