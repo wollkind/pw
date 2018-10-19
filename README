@@ -1,0 +1,11 @@
+install git
+install python36, python36-devel
+update pip
+install virtualenv
+git clone pw
+create env
+install mysql, mysql-devel
+install gcc
+pip install bs4
+pip install mysql-connector
+pip install lxml
