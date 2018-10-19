@@ -318,7 +318,7 @@ def get_team_schedule(league, team, season, con):
                         rs=awayruns
                         ra=homeruns
 
-                newrow = [league.value, team, year, str(strdate), game, str(opponent), result_char, rs, ra]
+                newrow = [league.value, team, year, str(strdate), game, str(opponent), result_char, rs, ra, home]
                 result_rows.append(newrow)
 
     log(result_rows[2])
@@ -330,21 +330,21 @@ def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
     log("Getting {} {} {} {} {} {}".format(league, team, level, season, tab, xtype))
     if tab == StatType.fielding:
         sqltable = 'fielding_stats'
-        skip_columns = []
+        skip_columns = [3]
     elif tab == StatType.hitting:
         if xtype == StatGroup.basic:
             sqltable = 'hitting_stats'
-            skip_columns = [2,3,4]
+            skip_columns = [3,4]
         else:
             sqltable = 'adv_hitting_stats'
-            skip_columns = [2,3,4]
+            skip_columns = [3,4]
     elif tab == StatType.pitching:
         if xtype == StatGroup.basic:
             sqltable = 'pitching_stats'
-            skip_columns = [2,3,4]
+            skip_columns = [3,4]
         else:
             sqltable = 'adv_pitching_stats'
-            skip_columns = [2,3,4]
+            skip_columns = [3,4]
 
     cur = con.cursor()
     # cur.execute("DELETE from {} WHERE league_id=%s and team_id=%s and level=%s and year=%s".format(sqltable),
@@ -392,17 +392,23 @@ def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
         if m:
             newrow += [str(m.group(1)), str(team), str(int(league)), str(int(level))]
             column_no = 0
+            include_row = True
             for val in row.find_all('td'):
                 column_no += 1
                 if column_no in skip_columns:
                     next
+                elif val.text == "Average" or val.text == "Total":
+                    include_row = False
+                    break
+                elif column_no == 2:
+                    newrow.append(val.find("a").text)
                 elif val.text == '---':
                     newrow.append(str(get_year_from_season(league, season)))
                 else:
                     newrow.append(val.text)
-            if newrow[4] != "Average":
+            if include_row:
                 rows.append(newrow)
-                #log(newrow)
+                log(newrow)
 
 
     batch_insert(sqltable, rows, con)
@@ -477,9 +483,10 @@ def get_all_stats_for_league_year(league, year, teams, levels, types, con, reloa
                 did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.basic, con, reload)
                 if did_work:
                     rest()
-                did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.advanced, con, reload)
-                if did_work:
-                    rest()
+                if type != StatType.fielding:
+                    did_work = get_pw_stats(league, team_id, level, season, type, StatGroup.advanced, con, reload)
+                    if did_work:
+                        rest()
         #did_work = get_pw_stats(league, team_id, Level.ml, season, StatType.fielding, StatGroup.basic, con, reload)
         # if did_work:
         #     rest()
@@ -492,8 +499,8 @@ if __name__ == '__main__':
 
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
-    get_sign_now(League.mays, 0, con)
-    #get_pw_stats(League.mays, 20, Level.ml, 23, StatType.hitting, StatGroup.basic, con)
+    #get_sign_now(League.mays, 0, con)
+    get_pw_stats(League.mays, 20, Level.ml, 10, StatType.fielding, StatGroup.basic, con)
     #get_team_news(League.mays, 19, 22, con)
     #get_team_history(League.mays, 20, con)
     #get_team_activity(League.mays, con)
