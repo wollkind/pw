@@ -27,9 +27,9 @@ if __name__ == '__main__':
     for league in leagues:
         league_count += 1
 
-        current_year = get_league_date(league).year
+        current_year = get_league_date(league).year - 1
 
-        start_year = current_year - 5
+        start_year = get_league_start_year(league)
 
         log("Starting league {} ({} of {})".format(league, league_count, len(leagues)))
         years = list(range(current_year, start_year - 1, -1))

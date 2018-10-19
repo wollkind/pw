@@ -106,20 +106,20 @@ def convert(val):
     return int(val)
 
 def get_html(url):
-    log("...reading " + url)
+    #log("...reading " + url)
     gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)  # Only for gangsters
     html = urllib.request.urlopen(url, context=gcontext).read().decode('utf-8', errors='ignore')
     return html
 
 def get_soup(url):
     html = get_html(url)
-    log("...making soup")
+    #log("...making soup")
     soup = BeautifulSoup(html, "lxml")
     return soup
 
 
 def batch_insert(table, rows, con):
-    log("...writing to database")
+    #log("...writing to database")
     cur = con.cursor()
     query_string = to_insert(table, con)
     cur.executemany(query_string, rows)
@@ -219,7 +219,7 @@ def get_pw_players(league, year, h, con):
     log("converting to csv")
     reader = csv.reader(f)
     your_list = list(reader)
-    log("...massaging data")
+    #log("...massaging data")
 
     newrows = [[league.value, str(year)] + [None if not x else x for x in row] for row in your_list[1:]]
 
@@ -259,13 +259,13 @@ def get_team_schedule(league, team, season, con):
                 [league.value, team, get_year_from_season(league, season)])
 
     url = "http://www.pennantwars.com/team.php?l={}&t={}&tab=2&xseason={}".format(league.value, team,season)
-    log("...reading "+url)
+    #log("...reading "+url)
     html = urllib.request.urlopen(url).read().decode('utf-8', errors='ignore')
 
-    log("...making soup")
+    #log("...making soup")
     soup = BeautifulSoup(html, "lxml")
     tables = soup.find_all("table", id=False, class_="fulltable")
-    log("done")
+    #log("done")
 
     result_rows=[]
 
@@ -380,7 +380,7 @@ def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
 
     p = re.compile(".*p=(\d+).*t=(\d+).*")
 
-    log("...massaging data")
+    #log("...massaging data")
 
 
     rows = []
@@ -408,7 +408,7 @@ def get_pw_stats(league, team, level, season, tab, xtype, con, reload=False):
                     newrow.append(val.text)
             if include_row:
                 rows.append(newrow)
-                log(newrow)
+                #log(newrow)
 
 
     batch_insert(sqltable, rows, con)
