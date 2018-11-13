@@ -35,7 +35,7 @@ if __name__ == '__main__':
         years = list(range(current_year, start_year - 1, -1))
 
         year_count = 0
-        random.shuffle(years)
+        #random.shuffle(years)
         for year in years:
             year_count+=1
             log("Starting {} {} ({} of {})".format(league.name, year, year_count, len(years)))
