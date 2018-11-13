@@ -464,6 +464,43 @@ def get_team_activity(league,con):
 
 
 
+
+
+def get_standings(league,con):
+    cur = con.cursor()
+
+    date = get_league_date(league)
+    cur.execute("DELETE from team_records WHERE league_id=%s and date=%s", [league.value, date])
+
+    for division in [1, 2, 3, 4]:
+        url = "http://www.pennantwars.com/league.php?l={}&d={}&tab=1".format(league, division)
+        soup = get_soup(url)
+        tables = soup.find_all("table", "fulltable")
+
+        p = re.compile("t=(\d+)")
+
+        records = []
+        for table in tables:
+            for row in table.find_all('tr'):
+
+                m = p.search(str(row))
+
+                if m:
+                    team_id = m.group(1)
+                    tds = row.find_all('td')
+                    record = tds[1].find('b').text.split(' - ')
+                    w = record[0]
+                    l = record[1]
+                    rpg = tds[8].text
+                    rapg = tds[9].text
+
+                    records.append([team_id, league.value, date, w, l, rpg, rapg])
+
+        log("Saving {} {}".format(league.name, division))
+        batch_insert('team_records', records, con)
+
+
+
 def get_all_stats_for_league_year(league, year, teams, levels, types, con, reload=False):
     season = get_season_from_year(league, year)
     random.shuffle(teams)
@@ -500,7 +537,7 @@ if __name__ == '__main__':
     cur = con.cursor()
     cur.execute("SET @@session.sql_mode= ''")
     #get_sign_now(League.mays, 0, con)
-    get_pw_stats(League.mays, 20, Level.ml, 10, StatType.fielding, StatGroup.basic, con)
+    #get_pw_stats(League.mays, 20, Level.ml, 10, StatType.fielding, StatGroup.basic, con)
     #get_team_news(League.mays, 19, 22, con)
-    #get_team_history(League.mays, 20, con)
-    #get_team_activity(League.mays, con)
+
+    get_standings(League.mays, con)
