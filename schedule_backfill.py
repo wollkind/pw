@@ -8,10 +8,8 @@ if __name__ == '__main__':
     con = get_con()
     con.autocommit = True
 
-
-
     teams = list(range(1,97))
-    leagues = [League.mays]
+    leagues = [League.mays, League.williams]
 
     league_count=0
     total_count=0
@@ -22,8 +20,8 @@ if __name__ == '__main__':
         start_year = get_league_start_year(league)
 
 
-        years = list(range(current_year, start_year - 1, -1))
-        random.shuffle(years)
+        years = list(range(current_year, current_year - 1, -1))
+        #random.shuffle(years)
         year_count =0
         for year in years:
             year_count+=1
@@ -41,4 +39,4 @@ if __name__ == '__main__':
                 if did_work:
                     rest()
 
-con.close()
+    con.close()
