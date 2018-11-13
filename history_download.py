@@ -9,7 +9,7 @@ if __name__ == '__main__':
     con.autocommit = True
 
     teams = list(range(1,97))
-    leagues = [League.mays]
+    leagues = [League.mays, League.williams]
 
     league_count=0
     total_count=0
