@@ -94,6 +94,7 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
     #
     #     log("{} releg: {} playoffs: {} conf: {} wc: {}".format(team[1], (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
     #     log(res)
+    print("Team, Releg, Playoffs, Conf, WC")
     for team in sorted_teams:
         res = aggregate_results[team[0]]
 
@@ -184,8 +185,8 @@ def get_team_records(league_id, division, year, con):
 def get_team_wpcts(league_id, division, year, con):
 
     cur = con.cursor()
-    cur.execute("""select s.team_id, sum(RS), sum(RA) from schedule_and_results s, team_histories h where h.team_id=s.team_id and
-    h.division=%s and s.year=%s and h.league_id=s.league_id and h.league_id=%s and game_date<%s group by s.team_id""",[division, year, league_id,start_date])
+    cur.execute("""select s.team_id, rpg*(w+l), rapg*(w+l) from team_records s, team_histories h where h.team_id=s.team_id and
+    h.division=%s and h.year=%s and h.league_id=s.league_id and h.league_id=%s and s.date=%s;""",[division, year, league_id,start_date])
 
     result = cur.fetchall()
 
