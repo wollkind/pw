@@ -89,11 +89,6 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
 
     sorted_teams = sorted(names.items(), key=operator.itemgetter(1))
 
-    # for team in sorted_teams:
-    #     res = aggregate_results[team[0]]
-    #
-    #     log("{} releg: {} playoffs: {} conf: {} wc: {}".format(team[1], (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
-    #     log(res)
     print("Team, Releg, Playoffs, Conf, WC")
     for team in sorted_teams:
         res = aggregate_results[team[0]]
@@ -168,11 +163,20 @@ def get_pA(wpct1, wpct2):
 
 def get_team_records(league_id, division, year, con):
     cur = con.cursor()
-    cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/100, sum(case when result='L' then 1 else 0 end) from schedule_and_results s, team_histories h
-    where h.team_id=s.team_id and
-    h.division=%s and s.year=%s and h.year=s.year and h.league_id=s.league_id and h.league_id=%s and game_date between '%s-04-01' and %s group by s.team_id""",[division, year, league_id, year, start_date])
+
+    cur.execute("""select s.team_id, w+(rpg-rapg)/100, l from team_records s, team_histories h
+         where s.team_id=h.team_id and 
+         h.division=%s and h.year=%s and h.league_id=s.league_id and h.league_id=%s and date=%s""",
+                [division, year, league_id, start_date])
 
     result = cur.fetchall()
+
+    if not result:
+        cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/100, sum(case when result='L' then 1 else 0 end) from schedule_and_results s, team_histories h
+        where h.team_id=s.team_id and
+        h.division=%s and s.year=%s and h.year=s.year and h.league_id=s.league_id and h.league_id=%s and game_date between '%s-04-01' and %s group by s.team_id""",[division, year, league_id, year, start_date])
+
+        result = cur.fetchall()
 
     team_records = {}
 
