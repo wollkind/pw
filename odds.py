@@ -194,6 +194,12 @@ def get_team_wpcts(league_id, division, year, con):
 
     result = cur.fetchall()
 
+    if not result:
+        cur.execute("""select s.team_id, sum(RS), sum(RA) from schedule_and_results s, team_histories h where h.team_id=s.team_id and
+        h.division=%s and s.year=%s and h.year=s.year and h.league_id=s.league_id and h.league_id=%s and game_date<%s group by s.team_id""",
+                    [division, year, league_id, start_date])
+        result = cur.fetchall()
+
     team_wptcs = {}
 
     for row in result:
