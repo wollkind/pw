@@ -93,7 +93,7 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
     for team in sorted_teams:
         res = aggregate_results[team[0]]
 
-        print("{}, {}, {}, {}, {}".format(team[1], (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
+        print("{}, {}, {}, {}, {}".format(team[1], res['wins']/num_sims, (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
 
     return aggregate_results
 
