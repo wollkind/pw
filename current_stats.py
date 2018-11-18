@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
         log("Starting {} {}".format(league.name, year))
 
-        get_all_stats_for_league_year(league, year, teams, levels, types, con)
+        get_all_stats_for_league_year(league, year, teams, levels, types, con, True)
 
 
     con.close()
