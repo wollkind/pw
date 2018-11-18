@@ -4,10 +4,13 @@ from pw import *
 import copy
 import operator
 import sys
+import datetime
+from decimal import Decimal
 from collections import defaultdict
 
 def postseason_odds(start_date, num_sims, league_id, division, year, con):
 
+    run_diff_per_win = Decimal(3.2/162/10000)
 
     aggregate_results = {}
     aggregate_results = defaultdict(lambda: {'wins':0,'losses':0,'maxwins':0,'maxlosses':0,'conf':0,'unconf':0,'wc':0,'unwc':0}, aggregate_results)
@@ -15,7 +18,10 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
     team_wpcts = get_team_wpcts(league_id, division, year, start_date, con)
     team_records = get_team_records(league_id, division, year, start_date, con)
 
-    remaining_schedule = get_remaining_schedule(league_id, division, year, start_date, con)
+    start_date_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    schedule_date = start_date_date + datetime.timedelta(days=1)
+
+    remaining_schedule = get_remaining_schedule(league_id, division, year, schedule_date, con)
 
 
     conf1 = get_conf_teams(league_id, division, 1, year, con)
@@ -39,11 +45,13 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
 
             rand = random.random()
             if rand < pA:
-                records_copy[teamA][0]+=1
+                records_copy[teamA][0]+=1+run_diff_per_win
                 records_copy[teamB][1]+=1
+                records_copy[teamB][0] -= run_diff_per_win
             else:
                 records_copy[teamA][1]+=1
-                records_copy[teamB][0]+=1
+                records_copy[teamA][0] -= run_diff_per_win
+                records_copy[teamB][0]+=1+run_diff_per_win
 
 
         for record in records_copy.items():
@@ -93,7 +101,7 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
     for team in sorted_teams:
         res = aggregate_results[team[0]]
 
-        print("{}, {}, {}, {}, {}".format(team[1], res['wins']/num_sims, (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
+        print("{}, {}, {}, {}, {}, {}".format(team[1], res['wins']/num_sims, (res['unwc']+res['unconf'])/num_sims*100, (res['wc']+res['conf'])/num_sims*100,res['conf']/num_sims*100,res['wc']/num_sims*100 ))
 
     return aggregate_results
 
@@ -159,7 +167,7 @@ def get_pA(wpct1, wpct2):
 def get_team_records(league_id, division, year, start_date, con):
     cur = con.cursor()
 
-    cur.execute("""select s.team_id, w+(rpg-rapg)/100, l from team_records s, team_histories h
+    cur.execute("""select s.team_id, w+(rpg-rapg)/10000, l from team_records s, team_histories h
          where s.team_id=h.team_id and 
          h.division=%s and h.year=%s and h.league_id=s.league_id and h.league_id=%s and date=%s""",
                 [division, year, league_id, start_date])
@@ -167,7 +175,7 @@ def get_team_records(league_id, division, year, start_date, con):
     result = cur.fetchall()
 
     if not result:
-        cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/100, sum(case when result='L' then 1 else 0 end) from schedule_and_results s, team_histories h
+        cur.execute("""select s.team_id, sum(case when result='W' then 1 else 0 end)+(sum(rs)-sum(ra))/count(*)/10000, sum(case when result='L' then 1 else 0 end) from schedule_and_results s, team_histories h
         where h.team_id=s.team_id and
         h.division=%s and s.year=%s and h.year=s.year and h.league_id=s.league_id and h.league_id=%s and game_date between '%s-04-01' and %s group by s.team_id""",[division, year, league_id, year, start_date])
 
