@@ -12,10 +12,10 @@ def postseason_odds(start_date, num_sims, league_id, division, year, con):
     aggregate_results = {}
     aggregate_results = defaultdict(lambda: {'wins':0,'losses':0,'maxwins':0,'maxlosses':0,'conf':0,'unconf':0,'wc':0,'unwc':0}, aggregate_results)
 
-    team_wpcts = get_team_wpcts(league_id, division, year, con)
-    team_records = get_team_records(league_id, division, year, con)
+    team_wpcts = get_team_wpcts(league_id, division, year, start_date, con)
+    team_records = get_team_records(league_id, division, year, start_date, con)
 
-    remaining_schedule = get_remaining_schedule(league_id, division, year, con)
+    remaining_schedule = get_remaining_schedule(league_id, division, year, start_date, con)
 
 
     conf1 = get_conf_teams(league_id, division, 1, year, con)
@@ -123,11 +123,6 @@ def get_conf_teams(league_id, division, conf_id, year, con):
     return output
 
 
-def get_playoff_outcome(records, conf1, conf2, conf3, conf4):
-
-    get_conf_outcomes(records, conf)
-
-
 def get_conf_outcomes(records, teams):
     conf_records={team: records[team] for team in teams}
     sorted_teams = sorted(conf_records.items(), key=operator.itemgetter(1), reverse=True)
@@ -161,7 +156,7 @@ def get_pA(wpct1, wpct2):
     return p1
 
 
-def get_team_records(league_id, division, year, con):
+def get_team_records(league_id, division, year, start_date, con):
     cur = con.cursor()
 
     cur.execute("""select s.team_id, w+(rpg-rapg)/100, l from team_records s, team_histories h
@@ -186,7 +181,7 @@ def get_team_records(league_id, division, year, con):
     return team_records
 
 
-def get_team_wpcts(league_id, division, year, con):
+def get_team_wpcts(league_id, division, year, start_date, con):
 
     cur = con.cursor()
     cur.execute("""select s.team_id, rpg*(w+l), rapg*(w+l) from team_records s, team_histories h where h.team_id=s.team_id and
@@ -209,7 +204,7 @@ def get_team_wpcts(league_id, division, year, con):
     return team_wptcs
 
 
-def get_remaining_schedule(league_id, division, year, con):
+def get_remaining_schedule(league_id, division, year, start_date, con):
 
     cur = con.cursor()
     cur.execute("""select s.team_id, s.opponent_id from schedule_and_results s, team_histories h where h.team_id=s.team_id and
