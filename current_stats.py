@@ -12,14 +12,10 @@ if __name__ == '__main__':
     types = [StatType.hitting, StatType.pitching, StatType.fielding]
     leagues = [League.mays, League.williams]
 
-    total_count = 0
-    league_count = 0
 
     for league in leagues:
-        league_count += 1
 
         year = get_league_date(league).year
-
 
         log("Starting {} {} ({} of {})".format(league.name, year))
 
