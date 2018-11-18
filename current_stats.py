@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
         year = get_league_date(league).year
 
-        log("Starting {} {} ({} of {})".format(league.name, year))
+        log("Starting {} {}".format(league.name, year))
 
         get_all_stats_for_league_year(league, year, teams, levels, types, con)
 
