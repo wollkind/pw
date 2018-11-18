@@ -28,10 +28,10 @@ if __name__ == '__main__':
 
         for year in years:
 
-            start_date = date(year, 9, 1)
-            end_date = date(year, 9, 26)
-            day_count = (end_date - start_date).days + 1
-            for single_date in (start_date + timedelta(n) for n in range(day_count)):
+            start_date = date(year, 6, 1)
+            end_date = date(year, 9, 1)
+            day_count = (end_date - start_date).months + 1
+            for single_date in (start_date + timedelta(months=n) for n in range(day_count)):
                 log(single_date.strftime("%Y-%m-%d"))
                 rows = []
                 for division in divisions:
