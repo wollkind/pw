@@ -37,5 +37,5 @@ if __name__ == '__main__':
                 for division in divisions:
                     result = postseason_odds(single_date, num_sims, league.value, division, year, con)
                     for team_id, data in result.items():
-                        rows.append([team_id, league.value, year, single_date, data['wins']/num_sims, data['conf'], data['unconf'], data['wc'], data['unwc']])
+                        rows.append([team_id, league.value, year, single_date, data['wins']/num_sims, data['conf']/num_sims, data['unconf']/num_sims, data['wc']/num_sims, data['unwc']/num_sims])
                 batch_insert('odds_forecasts', rows, con)
