@@ -184,7 +184,7 @@ def get_team_records(league_id, division, year, start_date, con):
     team_records = {}
 
     for row in result:
-        team_records[row[0]]=[row[1], row[2]]
+        team_records[row[0]]=[Decimal(row[1]), Decimal(row[2])]
 
     return team_records
 

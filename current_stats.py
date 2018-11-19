@@ -1,6 +1,7 @@
 __author__ = 'steve'
 import random
 from pw import *
+from datetime import date
 
 if __name__ == '__main__':
 
@@ -15,7 +16,13 @@ if __name__ == '__main__':
 
     for league in leagues:
 
-        year = get_league_date(league).year
+        league_date = get_league_date(league).year
+        year = league_date.year
+        season_start = date(year, 4, 1)
+
+        if league_date < season_start:
+            log("season hasn't started yet for {}".format(league.name))
+            continue
 
         log("Starting {} {}".format(league.name, year))
 
